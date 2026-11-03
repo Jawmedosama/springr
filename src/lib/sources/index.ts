@@ -1,3 +1,4 @@
+import { cityLabel } from "../belgium";
 import type { Offer, Region } from "../types";
 import { fetchAdzuna } from "./adzuna";
 import { fetchForem } from "./forem";
@@ -18,7 +19,7 @@ function normalize(s: string): string {
 export function dedupe(offers: Offer[]): Offer[] {
   const seen = new Map<string, Offer>();
   for (const o of offers) {
-    const key = [normalize(o.company), normalize(o.title), normalize(o.city)].join("|");
+    const key = [normalize(o.company), normalize(o.title), normalize(cityLabel(o.city, "fr"))].join("|");
     const prev = seen.get(key);
     // On garde l'offre la plus récente, ou celle d'une source officielle.
     const official = (x: Offer) => x.source === "Le Forem";
@@ -35,13 +36,13 @@ export function dedupe(offers: Offer[]): Offer[] {
 
 /** Agences d'intérim, de recrutement, sites d'emploi et organismes de formation : on ne garde que les offres d'entreprises. */
 const INTERMEDIARIES =
-  /^impact\b|\b(randstad|adecco|manpower|start ?people|tempo[- ]?team|unique interim|accent|synergie|daoust|trace|express medical|agilitas|hays|michael page|page personnel|robert half|t-interim|actief|asap|vivaldis|konvert|select human|ago jobs|crit|axxon|solvus|go4jobs|bright plus|itzu|dajobs|superprof|job ?& ?talent|ctrl-f|triangle solutions|demain selection|werkenvoor|interim|intérim|recruitment|recruiting|recrutement|staffing|headhunt\w*|executive search|uitzend\w*|werving|selectie|rh|hr|human resources|centre de formation|ifapme|syntra)\b|\bjobs?$|\.be$/i;
+  /^impact\b|\b(randstad|adecco|manpower|start ?people|tempo[- ]?team|unique interim|accent|synergie|daoust|trace|express medical|agilitas|hays|michael page|page personnel|robert half|t-interim|actief|asap|vivaldis|konvert|select human|ago jobs|crit|axxon|solvus|go4jobs|bright plus|itzu|dajobs|trixxo|let'?s work|superprof|job ?& ?talent|ctrl-f|triangle solutions|demain selection|werkenvoor|interim|intérim|recruitment|recruiting|recrutement|staffing|headhunt\w*|executive search|uitzend\w*|werving|selectie|rh|hr|human resources|centre de formation|ifapme|syntra)\b|\bjobs?$|\.be$/i;
 
 /** Formules typiques d'une annonce publiée pour le compte d'un tiers. */
 const THIRD_PARTY = /\b(pour (le compte de )?notre client|notre client recherche|pour l'un de nos clients|voor onze klant|onze klant zoekt|for our client)\b/i;
 
 export function isIntermediary(o: Offer): boolean {
-  return o.contract === "interim" || INTERMEDIARIES.test(o.company.trim()) || THIRD_PARTY.test(o.description);
+  return Boolean(o.agency) || o.contract === "interim" || INTERMEDIARIES.test(o.company.trim()) || THIRD_PARTY.test(o.description);
 }
 
 export interface OfferQuery {
@@ -70,7 +71,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   const what = q.what?.trim() ?? "";
   const where = q.where?.trim() ?? "";
   const km = Math.min(200, Math.max(5, q.km ?? 30));
-  const calls: Promise<Offer[]>[] = [fetchForem(), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
+  const calls: Promise<Offer[]>[] = [fetchForem({ what, where, km }), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
   return finish(await Promise.allSettled(calls));
@@ -89,5 +90,5 @@ export async function getRegionOffers(region?: Region): Promise<OffersResult> {
     cities.length > 1
       ? cities.map((c) => fetchAdzuna("", 1, c, 30))
       : [1, 2, 3, 4, 5].map((p) => fetchAdzuna("", p, cities[0], 30));
-  return finish(await Promise.allSettled([fetchForem(), ...calls]));
+  return finish(await Promise.allSettled([fetchForem({ region }), ...calls]));
 }

@@ -122,7 +122,7 @@ const fr = {
     faq: [
       ["C'est quoi Springr ?", "Une plateforme d'emploi pour les 16 à 35 ans qui vivent en Belgique. Elle rassemble les offres de plusieurs sources, les classe selon ton profil et t'aide à postuler."],
       ["C'est vraiment gratuit ?", "Oui. Chercher, swiper, préparer et suivre tes candidatures est gratuit, sans carte bancaire."],
-      ["D'où viennent les offres ?", "D'Adzuna Belgique et des données ouvertes du Forem, puis bientôt de VDAB et Actiris. Chaque offre renvoie vers l'annonce d'origine."],
+      ["D'où viennent les offres ?", "Des données ouvertes du Forem et d'Adzuna Belgique, puis bientôt de VDAB et Actiris. Chaque offre renvoie vers l'annonce d'origine."],
       ["Pourquoi vérifier mon adresse ?", "Le service est réservé aux personnes qui résident en Belgique. Ton code postal sert aussi à te proposer des offres proches de chez toi."],
       ["Que reçoit l'IA ?", "Ton prénom, ton nom, ton niveau d'études, ton domaine, tes compétences, tes langues et ton CV, dont on retire les e-mails, téléphones et adresses. Jamais ton adresse, ton e-mail ni ta date de naissance."],
       ["C'est quoi « Entreprises qui recrutent » ?", "La liste des entreprises qui publient en ce moment plusieurs offres dans ta région. Une candidature spontanée y a plus de chances d'être lue."],
@@ -288,7 +288,8 @@ const fr = {
   langNames: ["Français", "Néerlandais", "Allemand", "Anglais"],
   footer: {
     tagline: "La recherche d'emploi des 16 à 35 ans en Belgique.",
-    note: "Prototype. Les offres proviennent de sources publiques et renvoient toujours vers l'annonce d'origine.",
+    note: "Prototype. Les offres renvoient toujours vers l'annonce d'origine.",
+    sources: "Sources : Le Forem (données ouvertes ODWB, licence CC BY-SA 4.0) et Adzuna.",
     product: "Produit",
     help: "Aide",
   },
@@ -412,7 +413,7 @@ const nl: Dict = {
     faq: [
       ["Wat is Springr?", "Een jobplatform voor 16- tot 35-jarigen die in België wonen. Het verzamelt vacatures uit verschillende bronnen, rangschikt ze volgens je profiel en helpt je solliciteren."],
       ["Is het echt gratis?", "Ja. Zoeken, swipen, voorbereiden en je sollicitaties opvolgen is gratis, zonder bankkaart."],
-      ["Waar komen de vacatures vandaan?", "Van Adzuna België en de open data van Le Forem, binnenkort ook van VDAB en Actiris. Elke vacature verwijst naar de oorspronkelijke advertentie."],
+      ["Waar komen de vacatures vandaan?", "Van de open data van Le Forem en Adzuna België, binnenkort ook van VDAB en Actiris. Elke vacature verwijst naar de oorspronkelijke advertentie."],
       ["Waarom mijn adres controleren?", "De dienst is voorbehouden aan personen die in België wonen. Je postcode dient ook om je vacatures in de buurt te tonen."],
       ["Wat krijgt de AI?", "Je voornaam, naam, opleidingsniveau, domein, vaardigheden, talen en je cv, waaruit e-mails, telefoonnummers en adressen worden verwijderd. Nooit je adres, e-mail of geboortedatum."],
       ["Wat is « Bedrijven die aanwerven »?", "De lijst van bedrijven die nu meerdere vacatures in je regio publiceren. Een spontane sollicitatie wordt daar sneller gelezen."],
@@ -578,7 +579,8 @@ const nl: Dict = {
   langNames: ["Frans", "Nederlands", "Duits", "Engels"],
   footer: {
     tagline: "De zoektocht naar werk voor 16- tot 35-jarigen in België.",
-    note: "Prototype. Vacatures komen uit openbare bronnen en verwijzen altijd naar de oorspronkelijke advertentie.",
+    note: "Prototype. Vacatures verwijzen altijd naar de oorspronkelijke advertentie.",
+    sources: "Bronnen: Le Forem (open data ODWB, licentie CC BY-SA 4.0) en Adzuna.",
     product: "Product",
     help: "Hulp",
   },
