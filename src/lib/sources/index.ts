@@ -38,7 +38,7 @@ const INTERMEDIARIES =
   /^impact\b|\b(randstad|adecco|manpower|start ?people|tempo[- ]?team|unique interim|accent|synergie|daoust|trace|express medical|agilitas|hays|michael page|page personnel|robert half|t-interim|actief|asap|vivaldis|konvert|select human|ago jobs|crit|axxon|solvus|go4jobs|bright plus|itzu|dajobs|superprof|job ?& ?talent|ctrl-f|triangle solutions|demain selection|werkenvoor|interim|intérim|recruitment|recruiting|recrutement|staffing|headhunt\w*|executive search|uitzend\w*|werving|selectie|rh|hr|human resources|centre de formation|ifapme|syntra)\b|\bjobs?$|\.be$/i;
 
 /** Formules typiques d'une annonce publiée pour le compte d'un tiers. */
-const THIRD_PARTY = /\b(notre client|nos clients|pour le compte de|onze klant|onze klanten|our client)\b/i;
+const THIRD_PARTY = /\b(pour (le compte de )?notre client|notre client recherche|pour l'un de nos clients|voor onze klant|onze klant zoekt|for our client)\b/i;
 
 export function isIntermediary(o: Offer): boolean {
   return o.contract === "interim" || INTERMEDIARIES.test(o.company.trim()) || THIRD_PARTY.test(o.description);
@@ -54,15 +54,16 @@ export interface OfferQuery {
 export interface OffersResult {
   offers: Offer[];
   demo: boolean;
-  /** Nombre d'offres d'intermédiaires écartées. */
-  filtered: number;
+  /** Offres d'intermédiaires, écartées par défaut : l'utilisateur peut choisir de les afficher. */
+  agencies: Offer[];
 }
 
 function finish(results: PromiseSettledResult<Offer[]>[]): OffersResult {
   const live = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
   const all = live.length === 0 ? SAMPLE_OFFERS : dedupe(live);
   const offers = all.filter((o) => !isIntermediary(o));
-  return { offers, demo: live.length === 0, filtered: all.length - offers.length };
+  const agencies = all.filter(isIntermediary).map((o) => ({ ...o, agency: true }));
+  return { offers, agencies, demo: live.length === 0 };
 }
 
 export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {

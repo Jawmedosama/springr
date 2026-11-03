@@ -26,6 +26,8 @@ export interface Offer {
   source: string;
   publishedAt: string;
   salary?: string;
+  /** Publiée par une agence ou un intermédiaire. */
+  agency?: boolean;
 }
 
 export interface Profile {

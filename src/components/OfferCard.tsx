@@ -42,6 +42,7 @@ export default function OfferCard({ offer, t, lang, score, className = "", style
         <div className="card-tags">
           <span className="tag">{t.contracts[offer.contract]}</span>
           <span className="tag line">{ago(offer.publishedAt, t)}</span>
+          {offer.agency && <span className="tag warn">{t.offers.agency}</span>}
         </div>
         {score !== undefined && <MatchRing score={score} label={t.offers.match} />}
       </div>

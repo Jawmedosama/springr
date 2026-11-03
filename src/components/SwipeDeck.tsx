@@ -24,7 +24,9 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const o = t.offers;
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [offers, setOffers] = useState<Offer[] | null>(null);
-  const [meta, setMeta] = useState({ demo: false, filtered: 0 });
+  const [demo, setDemo] = useState(false);
+  const [agencies, setAgencies] = useState<Offer[]>([]);
+  const [showAgencies, setShowAgencies] = useState(false);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const [what, setWhat] = useState("");
   const [where, setWhere] = useState("");
@@ -44,9 +46,10 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     if (km) qs.set("km", String(km));
     fetch(`/api/offers?${qs}`)
       .then((r) => r.json())
-      .then((d: { offers: Offer[]; demo: boolean; filtered: number }) => {
+      .then((d: { offers: Offer[]; agencies: Offer[]; demo: boolean }) => {
         setOffers(d.offers);
-        setMeta({ demo: d.demo, filtered: d.filtered ?? 0 });
+        setAgencies(d.agencies ?? []);
+        setDemo(d.demo);
       })
       .catch(() => setOffers([]));
   }, []);
@@ -64,14 +67,14 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
   const ranked: Ranked[] = useMemo(() => {
     if (!offers) return [];
-    const list = offers
+    const list = (showAgencies ? [...offers, ...agencies] : offers)
       .filter((x) => !seen.has(x.id))
       .filter((x) => contract === "all" || x.contract === contract)
       .map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null }));
     return profile
       ? list.sort((a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0) || b.offer.publishedAt.localeCompare(a.offer.publishedAt))
       : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
-  }, [offers, profile, seen, lang, contract]);
+  }, [offers, agencies, showAgencies, profile, seen, lang, contract]);
 
   const current = ranked[0];
 
@@ -145,9 +148,16 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           ))}
         </div>
 
-        {meta.demo && <p className="banner">{o.demo}</p>}
+        {demo && <p className="banner">{o.demo}</p>}
         {profile === null && (
           <p className="banner ok">{o.noProfile} <Link href={`/${lang}/inscription`}>{t.nav.start} →</Link></p>
+        )}
+
+        {offers !== null && !showAgencies && ranked.length < 10 && agencies.length > 0 && (
+          <p className="banner">
+            {o.few}{" "}
+            <button className="btn small" onClick={() => setShowAgencies(true)}>{o.showAgencies} ({agencies.length})</button>
+          </p>
         )}
 
         {offers === null || profile === undefined ? (
@@ -219,7 +229,11 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
             <div className="deck-meta">
               <span>{ranked.length} {o.left}</span>
-              {meta.filtered > 0 && <span>{o.filtered} {meta.filtered}</span>}
+              {agencies.length > 0 && (
+                <button className="chip" onClick={() => setShowAgencies(!showAgencies)}>
+                  {showAgencies ? o.hideAgencies : `${o.showAgencies} (${agencies.length})`}
+                </button>
+              )}
             </div>
           </>
         )}
