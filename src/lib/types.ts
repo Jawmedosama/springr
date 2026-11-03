@@ -43,6 +43,8 @@ export interface Profile {
   languages: string[];
   contracts: ContractType[];
   mobilityKm: number;
+  /** Texte du CV collé par l'utilisateur, utilisé pour le score et les candidatures IA. */
+  cvText?: string;
   createdAt: string;
 }
 
@@ -59,4 +61,16 @@ export interface Application {
   updatedAt: string;
   remindAt?: string;
   notes?: string;
+  letter?: string;
+  cv?: string;
+  /** Candidature spontanée (marché caché) plutôt qu'une réponse à une offre. */
+  spontaneous?: boolean;
+}
+
+/** Ce qui est envoyé à l'IA : jamais l'adresse, l'e-mail ni la date de naissance. */
+export type AiProfile = Pick<Profile, "firstName" | "lastName" | "studyLevel" | "field" | "skills" | "languages" | "cvText">;
+
+export function toAiProfile(p: Profile): AiProfile {
+  const { firstName, lastName, studyLevel, field, skills, languages, cvText } = p;
+  return { firstName, lastName, studyLevel, field, skills, languages, cvText };
 }

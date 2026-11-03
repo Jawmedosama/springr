@@ -1,130 +1,276 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getDict } from "@/lib/i18n";
-import { matchOffer } from "@/lib/match";
+import { matchOffer, type MatchResult } from "@/lib/match";
 import { store } from "@/lib/store";
-import type { Lang, Offer, Profile } from "@/lib/types";
+import type { ContractType, Lang, Offer, Profile } from "@/lib/types";
+import OfferCard, { MatchRing } from "./OfferCard";
+import PrepSheet from "./PrepSheet";
+import { IconHeart, IconInfo, IconPen, IconX } from "./Icons";
+
+const CONTRACTS: ContractType[] = ["etudiant", "stage", "alternance", "cdd", "cdi"];
+const THRESHOLD = 110;
+
+interface Ranked {
+  offer: Offer;
+  m: MatchResult | null;
+}
 
 export default function SwipeDeck({ lang }: { lang: Lang }) {
   const t = getDict(lang);
   const o = t.offers;
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [offers, setOffers] = useState<Offer[] | null>(null);
-  const [demo, setDemo] = useState(false);
+  const [meta, setMeta] = useState({ demo: false, filtered: 0 });
   const [seen, setSeen] = useState<Set<string>>(new Set());
-  const [letter, setLetter] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [what, setWhat] = useState("");
+  const [where, setWhere] = useState("");
+  const [contract, setContract] = useState<ContractType | "all">("all");
   const [drag, setDrag] = useState(0);
+  const [leaving, setLeaving] = useState<0 | 1 | -1>(0);
+  const [detail, setDetail] = useState<Ranked | null>(null);
+  const [prep, setPrep] = useState<Offer | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const start = useRef<number | null>(null);
 
-  useEffect(() => {
-    setProfile(store.getProfile());
-    setSeen(store.getSeen());
-    fetch("/api/offers")
+  const load = useCallback((w: string, c: string) => {
+    setOffers(null);
+    const qs = new URLSearchParams();
+    if (w.trim()) qs.set("what", w.trim());
+    if (c.trim()) qs.set("where", c.trim());
+    fetch(`/api/offers?${qs}`)
       .then((r) => r.json())
-      .then((d: { offers: Offer[]; demo: boolean }) => {
+      .then((d: { offers: Offer[]; demo: boolean; filtered: number }) => {
         setOffers(d.offers);
-        setDemo(d.demo);
+        setMeta({ demo: d.demo, filtered: d.filtered ?? 0 });
       })
       .catch(() => setOffers([]));
   }, []);
 
-  const ranked = useMemo(() => {
-    if (!offers || !profile) return [];
-    return offers
-      .filter((x) => !seen.has(x.id))
-      .map((offer) => ({ offer, m: matchOffer(offer, profile, lang) }))
-      .sort((a, b) => b.m.score - a.m.score);
-  }, [offers, profile, seen, lang]);
+  useEffect(() => {
+    const p = store.getProfile();
+    setProfile(p);
+    setSeen(store.getSeen());
+    const w = p?.field ?? "";
+    const c = p?.city ?? "";
+    setWhat(w);
+    setWhere(c);
+    load(w, c);
+  }, [load]);
 
-  if (profile === undefined || offers === null) return <p className="muted">{o.loading}</p>;
-  if (!profile)
-    return (
-      <div className="empty">
-        <p>{o.noProfile}</p>
-        <Link className="btn primary" href={`/${lang}/inscription`}>{t.home.cta}</Link>
-      </div>
-    );
+  const ranked: Ranked[] = useMemo(() => {
+    if (!offers) return [];
+    const list = offers
+      .filter((x) => !seen.has(x.id))
+      .filter((x) => contract === "all" || x.contract === contract)
+      .map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null }));
+    return profile
+      ? list.sort((a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0))
+      : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
+  }, [offers, profile, seen, lang, contract]);
 
   const current = ranked[0];
 
-  function decide(keep: boolean) {
-    if (!current) return;
-    if (keep) store.saveOffer(current.offer);
-    store.markSeen(current.offer.id);
-    setSeen(new Set([...seen, current.offer.id]));
-    setLetter(null);
-    setDrag(0);
+  const decide = useCallback(
+    (keep: boolean) => {
+      if (!current || leaving) return;
+      setLeaving(keep ? 1 : -1);
+      setTimeout(() => {
+        if (keep) {
+          store.saveOffer(current.offer);
+          setToast(o.saved);
+          setTimeout(() => setToast(null), 2200);
+        }
+        store.markSeen(current.offer.id);
+        setSeen((s) => new Set([...s, current.offer.id]));
+        setDrag(0);
+        setLeaving(0);
+      }, 220);
+    },
+    [current, leaving, o.saved],
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (detail || prep || (e.target as HTMLElement).closest?.("input, textarea, select")) return;
+      if (e.key === "ArrowRight") decide(true);
+      if (e.key === "ArrowLeft") decide(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [decide, detail, prep]);
+
+  function search(e: React.FormEvent) {
+    e.preventDefault();
+    load(what, where);
   }
 
-  async function writeLetter() {
-    if (!current || !profile) return;
-    setBusy(true);
-    const { firstName, lastName, studyLevel, field, skills, languages } = profile;
-    const r = await fetch("/api/letter", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ offer: current.offer, profile: { firstName, lastName, studyLevel, field, skills, languages }, lang }),
-    }).then((x) => x.json()).catch(() => null);
-    setLetter(r?.letter ?? null);
-    setBusy(false);
+  function openPrep(offer: Offer) {
+    if (!profile) {
+      window.location.href = `/${lang}/inscription`;
+      return;
+    }
+    setDetail(null);
+    setPrep(offer);
   }
+
+  const x = leaving ? leaving * 600 : drag;
+  const frontStyle: React.CSSProperties = {
+    transform: `translateX(${x}px) rotate(${x / 22}deg)`,
+    transition: start.current !== null ? "none" : "transform 0.22s ease-out",
+  };
 
   return (
-    <div className="deck">
-      <h1>{o.title}</h1>
-      {demo && <p className="banner">{lang === "nl" ? "Demo: fictieve vacatures. Voeg de Adzuna- of Forem-sleutels toe om echte vacatures te zien." : "Démo : offres fictives. Ajoute les clés Adzuna ou Forem pour voir de vraies offres."}</p>}
-      {!current ? (
-        <p className="empty">{o.empty}</p>
-      ) : (
-        <>
-          <article
-            className="offer"
-            style={{ transform: `translateX(${drag}px) rotate(${drag / 25}deg)` }}
-            onPointerDown={(e) => { start.current = e.clientX; }}
-            onPointerMove={(e) => { if (start.current !== null) setDrag(e.clientX - start.current); }}
-            onPointerUp={() => {
-              start.current = null;
-              if (drag > 110) decide(true);
-              else if (drag < -110) decide(false);
-              else setDrag(0);
-            }}
-            onPointerCancel={() => { start.current = null; setDrag(0); }}
-          >
-            <div className="offer-head">
-              <span className="tag">{t.contracts[current.offer.contract]}</span>
-              <span className="score" title={o.match}>{current.m.score}%</span>
+    <main className="page">
+      <div className="page-head">
+        <h1>{o.title}</h1>
+        <p>{o.subtitle}</p>
+      </div>
+
+      <div className="feed">
+        <form className="searchbar" onSubmit={search}>
+          <input aria-label={o.what} placeholder={o.what} value={what} onChange={(e) => setWhat(e.target.value)} />
+          <input aria-label={o.where} placeholder={o.where} value={where} onChange={(e) => setWhere(e.target.value)} />
+          <button className="btn dark" type="submit">{o.search}</button>
+        </form>
+
+        <div className="filters">
+          <button className={contract === "all" ? "chip on" : "chip"} onClick={() => setContract("all")}>{o.all}</button>
+          {CONTRACTS.map((c) => (
+            <button key={c} className={contract === c ? "chip on" : "chip"} onClick={() => setContract(c)}>{t.contracts[c]}</button>
+          ))}
+        </div>
+
+        {meta.demo && <p className="banner">{o.demo}</p>}
+        {profile === null && (
+          <p className="banner ok">{o.noProfile} <Link href={`/${lang}/inscription`}>{t.nav.start} →</Link></p>
+        )}
+
+        {offers === null || profile === undefined ? (
+          <div className="stack"><div className="skeleton" style={{ position: "absolute", inset: 0 }} aria-label={o.loading} /></div>
+        ) : !current ? (
+          <div className="empty">
+            <p style={{ margin: 0 }}>{o.empty}</p>
+            {seen.size > 0 && (
+              <button className="btn" onClick={() => { store.resetSeen(); setSeen(new Set()); }}>{o.reset}</button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="stack">
+              {ranked.slice(1, 3).reverse().map((r, i, arr) => (
+                <OfferCard
+                  key={r.offer.id}
+                  offer={r.offer}
+                  t={t}
+                  score={r.m?.score}
+                  className={i === arr.length - 1 ? "behind" : "behind2"}
+                />
+              ))}
+              <OfferCard
+                key={current.offer.id}
+                offer={current.offer}
+                t={t}
+                score={current.m?.score}
+                className="front"
+                style={frontStyle}
+                handlers={{
+                  onPointerDown: (e) => {
+                    start.current = e.clientX;
+                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                  },
+                  onPointerMove: (e) => { if (start.current !== null) setDrag(e.clientX - start.current); },
+                  onPointerUp: () => {
+                    const moved = Math.abs(drag);
+                    start.current = null;
+                    if (drag > THRESHOLD) decide(true);
+                    else if (drag < -THRESHOLD) decide(false);
+                    else {
+                      setDrag(0);
+                      if (moved < 6) setDetail(current);
+                    }
+                  },
+                  onPointerCancel: () => { start.current = null; setDrag(0); },
+                }}
+              >
+                {drag > 40 && <span className="stamp keep" style={{ opacity: Math.min(1, drag / THRESHOLD) }}>{o.like}</span>}
+                {drag < -40 && <span className="stamp pass" style={{ opacity: Math.min(1, -drag / THRESHOLD) }}>{o.pass}</span>}
+                {current.m && current.m.reasons.length > 0 && (
+                  <ul className="reasons">
+                    {current.m.reasons.slice(0, 3).map((r) => <li key={r}>{r}</li>)}
+                  </ul>
+                )}
+              </OfferCard>
             </div>
-            <h2>{current.offer.title}</h2>
-            <p className="company">
-              {current.offer.company} · {current.offer.city}
-              {current.offer.region && t.regions[current.offer.region] !== current.offer.city ? ` · ${t.regions[current.offer.region]}` : ""}
-            </p>
-            {current.offer.salary && <p className="muted">{current.offer.salary}</p>}
-            <p className="desc">{current.offer.description}</p>
-            {current.m.reasons.length > 0 && (
-              <ul className="reasons">{current.m.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+
+            <div className="deck-actions">
+              <button className="icon-btn pass" onClick={() => decide(false)} aria-label={o.pass} title={`${o.pass} (←)`}><IconX /></button>
+              <button className="icon-btn sm" onClick={() => setDetail(current)} aria-label={o.details} title={o.details}><IconInfo /></button>
+              <button className="icon-btn sm" onClick={() => openPrep(current.offer)} aria-label={o.prepare} title={o.prepare}><IconPen /></button>
+              <button className="icon-btn keep" onClick={() => decide(true)} aria-label={o.like} title={`${o.like} (→)`}><IconHeart /></button>
+            </div>
+
+            <div className="deck-meta">
+              <span>{ranked.length} {o.left}</span>
+              {meta.filtered > 0 && <span>{o.filtered} {meta.filtered}</span>}
+            </div>
+          </>
+        )}
+      </div>
+
+      {detail && (
+        <div className="sheet-bg" onClick={() => setDetail(null)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label={detail.offer.title} onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head">
+              <div>
+                <span className="tag">{t.contracts[detail.offer.contract]}</span>
+                <h2 style={{ marginTop: 10 }}>{detail.offer.title}</h2>
+                <p className="muted" style={{ margin: 0 }}>{detail.offer.company} · {detail.offer.city}</p>
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                {detail.m && <MatchRing score={detail.m.score} label={o.match} />}
+                <button className="close" onClick={() => setDetail(null)} aria-label={o.close}>✕</button>
+              </div>
+            </div>
+            {detail.offer.salary && <p className="salary" style={{ margin: 0 }}>{detail.offer.salary}</p>}
+            {detail.m && detail.m.reasons.length > 0 && (
+              <div className="panel" style={{ background: "var(--bg)" }}>
+                <h3>{o.why}</h3>
+                <ul className="reasons">{detail.m.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+              </div>
             )}
-            <p className="muted small">{o.source} : {current.offer.source}</p>
-          </article>
-          <div className="actions">
-            <button className="btn round" onClick={() => decide(false)} aria-label={o.pass}>✕ {o.pass}</button>
-            <a className="btn" href={current.offer.url} target="_blank" rel="noreferrer">{o.open}</a>
-            <button className="btn round primary" onClick={() => decide(true)} aria-label={o.like}>♥ {o.like}</button>
+            <p style={{ whiteSpace: "pre-line" }}>{detail.offer.description}</p>
+            <p className="muted small" style={{ margin: 0 }}>{o.source} : {detail.offer.source}</p>
+            <div className="sheet-actions">
+              <button className="btn brand" onClick={() => openPrep(detail.offer)}>{o.prepare}</button>
+              {detail.offer.url && detail.offer.url !== "#" && (
+                <a className="btn" href={detail.offer.url} target="_blank" rel="noreferrer">{o.open}</a>
+              )}
+              <button className="btn" onClick={() => { setDetail(null); decide(true); }}>{o.like}</button>
+            </div>
           </div>
-          <div className="letter-box">
-            <button className="btn" onClick={writeLetter} disabled={busy}>{busy ? o.letterLoading : o.letter}</button>
-            {letter && (
-              <>
-                <textarea value={letter} onChange={(e) => setLetter(e.target.value)} rows={12} />
-                <button className="btn" onClick={() => navigator.clipboard?.writeText(letter)}>{o.copy}</button>
-              </>
-            )}
-          </div>
-        </>
+        </div>
       )}
-    </div>
+
+      {prep && profile && (
+        <PrepSheet
+          offer={prep}
+          profile={profile}
+          lang={lang}
+          t={t}
+          onClose={() => setPrep(null)}
+          onSaved={() => {
+            store.markSeen(prep.id);
+            setSeen((s) => new Set([...s, prep.id]));
+            setToast(o.saved);
+            setTimeout(() => setToast(null), 2200);
+          }}
+        />
+      )}
+
+      {toast && <div className="toast" role="status">{toast}</div>}
+    </main>
   );
 }

@@ -34,7 +34,7 @@ function guessRegion(area: string[] = []): Region | undefined {
 }
 
 /** API Adzuna pour la Belgique (pays « be »). Clé gratuite sur developer.adzuna.com. */
-export async function fetchAdzuna(what = "", page = 1): Promise<Offer[]> {
+export async function fetchAdzuna(what = "", page = 1, where = ""): Promise<Offer[]> {
   const id = process.env.ADZUNA_APP_ID;
   const key = process.env.ADZUNA_APP_KEY;
   if (!id || !key) return [];
@@ -45,6 +45,10 @@ export async function fetchAdzuna(what = "", page = 1): Promise<Offer[]> {
     "content-type": "application/json",
   });
   if (what) params.set("what", what);
+  if (where) {
+    params.set("where", where);
+    params.set("distance", "30");
+  }
   const res = await fetch(
     `https://api.adzuna.com/v1/api/jobs/be/search/${page}?${params}`,
     { next: { revalidate: 3600 } },
