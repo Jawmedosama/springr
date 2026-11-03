@@ -1,0 +1,5 @@
+project_id = "finepmrbgfirmsjmthhz"
+
+[auth]
+site_url = "https://springr-two.vercel.app"
+additional_redirect_urls = ["https://springr-two.vercel.app/**"]
