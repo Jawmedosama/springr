@@ -38,3 +38,43 @@ export function isEligibleAge(birthDate: string): boolean {
 
 /** Quota annuel de travail étudiant à cotisations réduites (en heures). */
 export const STUDENT_HOURS_QUOTA = 650;
+
+const WALLONIE =
+  /\b(wallon\w*|waals\w*|wallonie|walloni[eë]|hainaut|henegouwen|li[eè]ge|luik|namur|namen|luxembourg|luxemburg|nivelles|nijvel|wavre|waver|charleroi|mons|bergen|tournai|doornik|mouscron|moeskroen|verviers|huy|hoei|waremme|borgworm|dinant|philippeville|thuin|soignies|zinnik|ath|aat|arlon|aarlen|bastogne|bastenaken|neufch[aâ]teau|marche-en-famenne|virton)\b/i;
+const FLANDRE =
+  /\b(vlaander\w*|vlaams\w*|flandre\w*|antwerpen|anvers|gent|gand|limburg|limbourg|leuven|louvain|halle-vilvoorde|mechelen|malines|turnhout|hasselt|tongeren|maaseik|brugge|bruges|kortrijk|courtrai|oostende|ostende|roeselare|ieper|ypres|aalst|alost|dendermonde|sint-niklaas|oudenaarde|eeklo|tielt|veurne|diksmuide)\b/i;
+const BRUXELLES = /\b(bruxelles|brussel|brussels)\b/i;
+
+/**
+ * Région d'après le lieu d'une offre. Adzuna donne les lieux en néerlandais (Nijvel, Namen, Luik).
+ * « Louvain-la-Neuve » et « Waals-Brabant » doivent rester en Wallonie : la Wallonie est testée d'abord.
+ */
+export function regionFromPlace(place: string): Region | undefined {
+  if (/louvain-la-neuve|ottignies/i.test(place) || WALLONIE.test(place)) return "wallonie";
+  if (FLANDRE.test(place)) return "flandre";
+  if (BRUXELLES.test(place)) return "bruxelles";
+  return undefined;
+}
+
+/** Noms de lieux néerlandais et leur équivalent français. */
+const PLACES_NL_FR: Record<string, string> = {
+  Brussel: "Bruxelles", Elsene: "Ixelles", "Sint-Gillis": "Saint-Gilles", Ukkel: "Uccle", Vorst: "Forest",
+  Schaarbeek: "Schaerbeek", Oudergem: "Auderghem", "Watermaal-Bosvoorde": "Watermael-Boitsfort",
+  "Sint-Lambrechts-Woluwe": "Woluwe-Saint-Lambert", "Sint-Pieters-Woluwe": "Woluwe-Saint-Pierre",
+  "Sint-Jans-Molenbeek": "Molenbeek-Saint-Jean", "Sint-Joost-ten-Node": "Saint-Josse-ten-Noode",
+  "Sint-Agatha-Berchem": "Berchem-Sainte-Agathe",
+  Nijvel: "Nivelles", Waver: "Wavre", Graven: "Grez-Doiceau", Geldenaken: "Jodoigne", Terhulpen: "La Hulpe",
+  Eigenbrakel: "Braine-l'Alleud", Kasteelbrakel: "Braine-le-Château", "'s-Gravenbrakel": "Braine-le-Comte",
+  Namen: "Namur", Luik: "Liège", Bergen: "Mons", Doornik: "Tournai", Moeskroen: "Mouscron", Aat: "Ath",
+  Zinnik: "Soignies", Edingen: "Enghien", Borgworm: "Waremme", Hoei: "Huy", Aarlen: "Arlon", Bastenaken: "Bastogne",
+  Antwerpen: "Anvers", Gent: "Gand", Brugge: "Bruges", Leuven: "Louvain", Mechelen: "Malines", Kortrijk: "Courtrai",
+  Oostende: "Ostende", Ieper: "Ypres", Aalst: "Alost", Dendermonde: "Termonde", Tienen: "Tirlemont",
+  Tongeren: "Tongres", "Sint-Niklaas": "Saint-Nicolas", Halle: "Hal", "België": "Belgique",
+};
+const PLACES_FR_NL = Object.fromEntries(Object.entries(PLACES_NL_FR).map(([nl, fr]) => [fr, nl]));
+
+/** Lieu lisible dans la langue de l'interface : « Elsene, Brussel Hoofdstad » devient « Ixelles ». */
+export function cityLabel(city: string, lang: "fr" | "nl"): string {
+  const name = city.split(",")[0].trim();
+  return (lang === "fr" ? PLACES_NL_FR[name] : PLACES_FR_NL[name]) ?? name;
+}

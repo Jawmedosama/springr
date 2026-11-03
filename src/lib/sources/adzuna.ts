@@ -1,4 +1,5 @@
-import type { ContractType, Offer, Region } from "../types";
+import { regionFromPlace } from "../belgium";
+import type { ContractType, Offer } from "../types";
 
 interface AdzunaJob {
   id: string;
@@ -14,27 +15,21 @@ interface AdzunaJob {
   salary_max?: number;
 }
 
+/** Le titre fait foi ; dans la description, on ne retient que des expressions sans ambiguïté. */
 function guessContract(job: AdzunaJob): ContractType {
-  const t = `${job.title} ${job.description}`.toLowerCase();
-  if (/(étudiant|etudiant|student)/.test(t)) return "etudiant";
-  if (/(stage|stagiair|internship)/.test(t)) return "stage";
-  if (/(alternance|duaal|dual)/.test(t)) return "alternance";
-  if (/(intérim|interim)/.test(t)) return "interim";
-  if (job.contract_type === "permanent") return "cdi";
-  if (job.contract_type === "contract") return "cdd";
-  return "cdi";
-}
-
-function guessRegion(area: string[] = []): Region | undefined {
-  const s = area.join(" ").toLowerCase();
-  if (/brux|brussel/.test(s)) return "bruxelles";
-  if (/wallon|liège|namur|hainaut|luxembourg|brabant wallon/.test(s)) return "wallonie";
-  if (/vlaander|flandre|antwerp|anvers|gent|limburg|vlaams/.test(s)) return "flandre";
-  return undefined;
+  const title = job.title.toLowerCase();
+  const text = `${title} ${job.description.toLowerCase()}`;
+  if (/(étudiant|etudiant|student|jobiste)/.test(title) || /(job étudiant|job etudiant|studentenjob|jobstudent)/.test(text)) return "etudiant";
+  if (/\b(stage|stagiair\w*|internship|intern)\b/.test(title)) return "stage";
+  if (/\b(alternance|duaal|apprenti\w*)\b/.test(title)) return "alternance";
+  if (/(intérim|interim|uitzend)/.test(title)) return "interim";
+  if (job.contract_type === "permanent" || /\b(cdi|vast contract|onbepaalde duur)\b|durée indéterminée/.test(text)) return "cdi";
+  if (job.contract_type === "contract" || /\b(cdd|bepaalde duur|tijdelijk contract)\b|durée déterminée/.test(text)) return "cdd";
+  return "nc";
 }
 
 /** API Adzuna pour la Belgique (pays « be »). Clé gratuite sur developer.adzuna.com. */
-export async function fetchAdzuna(what = "", page = 1, where = ""): Promise<Offer[]> {
+export async function fetchAdzuna(what = "", page = 1, where = "", km = 30): Promise<Offer[]> {
   const id = process.env.ADZUNA_APP_ID;
   const key = process.env.ADZUNA_APP_KEY;
   if (!id || !key) return [];
@@ -42,12 +37,14 @@ export async function fetchAdzuna(what = "", page = 1, where = ""): Promise<Offe
     app_id: id,
     app_key: key,
     results_per_page: "50",
+    max_days_old: "45",
     "content-type": "application/json",
   });
   if (what) params.set("what", what);
+  else params.set("sort_by", "date");
   if (where) {
     params.set("where", where);
-    params.set("distance", "30");
+    params.set("distance", String(km));
   }
   const res = await fetch(
     `https://api.adzuna.com/v1/api/jobs/be/search/${page}?${params}`,
@@ -60,7 +57,7 @@ export async function fetchAdzuna(what = "", page = 1, where = ""): Promise<Offe
     title: j.title.replace(/<[^>]+>/g, ""),
     company: j.company?.display_name ?? "",
     city: j.location?.display_name ?? "",
-    region: guessRegion(j.location?.area),
+    region: regionFromPlace([...(j.location?.area ?? []), j.location?.display_name ?? ""].join(", ")),
     contract: guessContract(j),
     description: j.description.replace(/<[^>]+>/g, ""),
     url: j.redirect_url,

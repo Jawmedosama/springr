@@ -3,6 +3,8 @@ import type { Lang, Offer, Profile } from "./types";
 export interface MatchResult {
   score: number;
   reasons: string[];
+  /** Points d'attention : langue manquante, offre ancienne. */
+  warnings: string[];
 }
 
 const LANG_KEYWORDS: Record<string, string[]> = {
@@ -25,12 +27,15 @@ const PROFILE_LANG_CODE: Record<string, string> = {
  */
 export function matchOffer(offer: Offer, profile: Profile, ui: Lang): MatchResult {
   const reasons: string[] = [];
+  const warnings: string[] = [];
   const t = (fr: string, nl: string) => (ui === "nl" ? nl : fr);
   let score = 20;
 
   if (profile.contracts.includes(offer.contract)) {
     score += 30;
     reasons.push(t("Le type de contrat te correspond", "Het contracttype past bij je"));
+  } else if (offer.contract === "nc") {
+    score += 10;
   }
   if (offer.region && offer.region === profile.region) {
     score += 20;
@@ -57,8 +62,19 @@ export function matchOffer(offer: Offer, profile: Profile, ui: Lang): MatchResul
     score += 5;
   } else {
     score -= 15 * missing.length;
-    reasons.push(t("Une langue demandée te manque", "Een gevraagde taal ontbreekt"));
+    warnings.push(t("Une langue demandée te manque", "Een gevraagde taal ontbreekt"));
   }
 
-  return { score: Math.max(0, Math.min(100, score)), reasons };
+  const days = Math.floor((Date.now() - new Date(offer.publishedAt).getTime()) / 86400000);
+  if (days > 30) {
+    score -= 15;
+    warnings.push(t(`Offre publiée il y a ${days} jours : elle est peut-être pourvue`, `Vacature van ${days} dagen geleden: mogelijk al ingevuld`));
+  } else if (days > 14) {
+    score -= 5;
+  } else if (days <= 3) {
+    score += 5;
+    reasons.push(t("Offre toute récente", "Gloednieuwe vacature"));
+  }
+
+  return { score: Math.max(0, Math.min(100, score)), reasons, warnings };
 }

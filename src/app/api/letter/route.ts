@@ -18,7 +18,7 @@ function fallbackLetter({ offer, profile, lang, spontaneous }: Body): string {
       : `Met veel interesse las ik uw vacature voor ${offer.title} bij ${offer.company}.`;
     return `Geachte heer, mevrouw,
 
-${intro} Met mijn achtergrond in ${profile.field || "dit domein"} (${profile.studyLevel}) en mijn vaardigheden in ${skills || "teamwerk en communicatie"} ben ik ervan overtuigd dat ik snel kan bijdragen aan uw team.
+${intro} Mijn opleidingsniveau: ${profile.studyLevel}. Ik wil graag mijn sterke punten (${skills || "teamwerk en communicatie"}) inzetten en snel bijdragen aan uw team.
 
 Graag licht ik mijn motivatie toe tijdens een gesprek.
 
@@ -30,7 +30,7 @@ ${profile.firstName} ${profile.lastName}`;
     : `C'est avec un grand intérêt que j'ai découvert votre offre de ${offer.title} chez ${offer.company}.`;
   return `Madame, Monsieur,
 
-${intro} Avec mon parcours en ${profile.field || "ce domaine"} (${profile.studyLevel}) et mes compétences en ${skills || "travail d'équipe et communication"}, je suis convaincu·e de pouvoir rapidement contribuer à votre équipe.
+${intro} Mon niveau d'études : ${profile.studyLevel}. Je souhaite mettre à votre service mes points forts (${skills || "travail d'équipe et communication"}) et contribuer rapidement à votre équipe.
 
 Je serais ravi·e de vous exposer ma motivation lors d'un entretien.
 

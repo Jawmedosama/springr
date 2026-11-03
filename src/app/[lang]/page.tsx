@@ -53,8 +53,8 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
           <p className="note">{h.note}</p>
           <div className="hero-demo">
             <div className="demo-stack">
-              <OfferCard offer={b} t={t} score={72} className="back" />
-              <OfferCard offer={a} t={t} score={91} className="front" />
+              <OfferCard offer={b} t={t} lang={lang} score={72} className="back" />
+              <OfferCard offer={a} t={t} lang={lang} score={91} className="front" />
             </div>
             <div className="deck-actions" style={{ marginTop: 24 }} aria-hidden>
               <span className="icon-btn pass"><IconX /></span>
@@ -105,7 +105,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
               <p className="small">{h.feed.hint}</p>
             </div>
             <div className="feature-visual">
-              <OfferCard offer={a} t={t} score={91} style={{ maxWidth: 340, width: "100%" }}>
+              <OfferCard offer={a} t={t} lang={lang} score={91} style={{ maxWidth: 340, width: "100%" }}>
                 <ul className="reasons">
                   <li>{lang === "nl" ? "Het contracttype past bij je" : "Le type de contrat te correspond"}</li>
                   <li>{lang === "nl" ? "In jouw regio" : "Dans ta région"}</li>

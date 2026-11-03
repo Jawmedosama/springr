@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cityLabel } from "@/lib/belgium";
 import type { Dict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
 import { toAiProfile, type Lang, type Offer, type Profile } from "@/lib/types";
@@ -84,7 +85,7 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
           <div>
             <span className="tag">{spontaneous ? p.spontaneous : t.contracts[offer.contract]}</span>
             <h2 style={{ marginTop: 10 }}>{spontaneous ? offer.company : offer.title}</h2>
-            <p className="muted" style={{ margin: 0 }}>{spontaneous ? offer.city : `${offer.company} · ${offer.city}`}</p>
+            <p className="muted" style={{ margin: 0 }}>{spontaneous ? cityLabel(offer.city, lang) : `${offer.company} · ${cityLabel(offer.city, lang)}`}</p>
           </div>
           <button className="close" onClick={onClose} aria-label={t.offers.close}>✕</button>
         </div>

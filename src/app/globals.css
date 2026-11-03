@@ -366,7 +366,7 @@ p { margin: 0 0 10px; }
 .form { display: grid; gap: 18px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; display: grid; gap: 14px; }
 .panel h3 { margin: 0; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 .span2 { grid-column: span 2; }
 @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } .span2 { grid-column: auto; } }
 label { display: grid; gap: 6px; font-size: 0.9rem; font-weight: 600; }

@@ -1,4 +1,4 @@
-import type { Offer } from "../types";
+import type { Offer, Region } from "../types";
 import { fetchAdzuna } from "./adzuna";
 import { fetchForem } from "./forem";
 import { SAMPLE_OFFERS } from "./sample";
@@ -33,17 +33,22 @@ export function dedupe(offers: Offer[]): Offer[] {
   return [...seen.values()];
 }
 
-/** Agences d'intérim, de recrutement et organismes de formation : on ne garde que les offres d'entreprises. */
+/** Agences d'intérim, de recrutement, sites d'emploi et organismes de formation : on ne garde que les offres d'entreprises. */
 const INTERMEDIARIES =
-  /\b(randstad|adecco|manpower|start ?people|tempo[- ]?team|unique interim|accent|synergie|daoust|trace|express medical|agilitas|hays|michael page|page personnel|robert half|t-interim|actief|asap|vivaldis|konvert|select human|ago jobs|crit|axxon|solvus|go4jobs|bright plus|interim|intérim|recruitment|recrutement|staffing|uitzend|centre de formation|ifapme|syntra)\b/i;
+  /\b(randstad|adecco|manpower|start ?people|tempo[- ]?team|unique interim|accent|synergie|daoust|trace|express medical|agilitas|hays|michael page|page personnel|robert half|t-interim|actief|asap|vivaldis|konvert|select human|ago jobs|crit|axxon|solvus|go4jobs|bright plus|itzu|dajobs|ctrl-f|triangle solutions|demain selection|werkenvoor|interim|intérim|recruitment|recruiting|recrutement|staffing|headhunt\w*|executive search|uitzend\w*|werving|selectie|rh|hr|human resources|centre de formation|ifapme|syntra)\b|\bjobs?$|\.be$/i;
+
+/** Formules typiques d'une annonce publiée pour le compte d'un tiers. */
+const THIRD_PARTY = /\b(notre client|nos clients|pour le compte de|onze klant|onze klanten|our client)\b/i;
 
 export function isIntermediary(o: Offer): boolean {
-  return o.contract === "interim" || INTERMEDIARIES.test(o.company);
+  return o.contract === "interim" || INTERMEDIARIES.test(o.company.trim()) || THIRD_PARTY.test(o.description);
 }
 
 export interface OfferQuery {
   what?: string;
   where?: string;
+  /** Distance maximale autour de la ville, en km. */
+  km?: number;
 }
 
 export interface OffersResult {
@@ -53,16 +58,35 @@ export interface OffersResult {
   filtered: number;
 }
 
-export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
-  const what = q.what?.trim() ?? "";
-  const where = q.where?.trim() ?? "";
-  const calls: Promise<Offer[]>[] = [fetchForem(), fetchAdzuna(what, 1, where), fetchAdzuna(what, 2, where)];
-  // Recherche ciblée : on complète avec des offres plus larges (même métier partout, ou tout dans la ville).
-  if (what && where) calls.push(fetchAdzuna(what, 1), fetchAdzuna("", 1, where));
-  else if (what || where) calls.push(fetchAdzuna("", 1));
-  const results = await Promise.allSettled(calls);
+function finish(results: PromiseSettledResult<Offer[]>[]): OffersResult {
   const live = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
   const all = live.length === 0 ? SAMPLE_OFFERS : dedupe(live);
   const offers = all.filter((o) => !isIntermediary(o));
   return { offers, demo: live.length === 0, filtered: all.length - offers.length };
+}
+
+export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
+  const what = q.what?.trim() ?? "";
+  const where = q.where?.trim() ?? "";
+  const km = Math.min(200, Math.max(5, q.km ?? 30));
+  const calls: Promise<Offer[]>[] = [fetchForem(), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
+  // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
+  if (what && where) calls.push(fetchAdzuna("", 1, where, km));
+  return finish(await Promise.allSettled(calls));
+}
+
+const REGION_CITIES: Record<Region, string[]> = {
+  bruxelles: ["Bruxelles"],
+  wallonie: ["Liège", "Namur", "Charleroi", "Mons", "Wavre"],
+  flandre: ["Antwerpen", "Gent", "Leuven", "Brugge", "Hasselt"],
+};
+
+/** Recherche large pour la page Entreprises : toute une région, sans filtre de métier. */
+export async function getRegionOffers(region?: Region): Promise<OffersResult> {
+  const cities = region ? REGION_CITIES[region] : [""];
+  const calls =
+    cities.length > 1
+      ? cities.map((c) => fetchAdzuna("", 1, c, 30))
+      : [1, 2, 3, 4, 5].map((p) => fetchAdzuna("", p, cities[0], 30));
+  return finish(await Promise.allSettled([fetchForem(), ...calls]));
 }

@@ -1,5 +1,6 @@
+import { cityLabel } from "@/lib/belgium";
 import type { Dict } from "@/lib/i18n";
-import type { Offer } from "@/lib/types";
+import type { Lang, Offer } from "@/lib/types";
 import { IconPin } from "./Icons";
 
 export function MatchRing({ score, label }: { score: number; label: string }) {
@@ -25,6 +26,7 @@ export function ago(date: string, t: Dict): string {
 interface Props {
   offer: Offer;
   t: Dict;
+  lang: Lang;
   score?: number;
   className?: string;
   style?: React.CSSProperties;
@@ -32,7 +34,8 @@ interface Props {
   handlers?: React.HTMLAttributes<HTMLElement>;
 }
 
-export default function OfferCard({ offer, t, score, className = "", style, children, handlers }: Props) {
+export default function OfferCard({ offer, t, lang, score, className = "", style, children, handlers }: Props) {
+  const city = cityLabel(offer.city, lang);
   return (
     <article className={`card-job ${className}`} style={style} {...handlers}>
       <div className="card-top">
@@ -47,7 +50,7 @@ export default function OfferCard({ offer, t, score, className = "", style, chil
         <span className="avatar" aria-hidden>{initials(offer.company || offer.title)}</span>
         <div>
           <b>{offer.company || "—"}</b>
-          <span><IconPin className="" />{" "}{offer.city}{offer.region && t.regions[offer.region] !== offer.city ? ` · ${t.regions[offer.region]}` : ""}</span>
+          <span><IconPin className="" />{" "}{city}{offer.region && t.regions[offer.region] !== city ? ` · ${t.regions[offer.region]}` : ""}</span>
         </div>
       </div>
       {offer.salary && <span className="salary">{offer.salary}</span>}

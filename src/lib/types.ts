@@ -8,7 +8,9 @@ export type ContractType =
   | "alternance"
   | "cdd"
   | "cdi"
-  | "interim";
+  | "interim"
+  /** Le contrat n'est pas indiqué par la source. */
+  | "nc";
 
 export interface Offer {
   id: string;

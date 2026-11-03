@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
 import type { Lang, Offer, Profile, Region } from "@/lib/types";
@@ -37,25 +38,30 @@ export default function CompanyList({ lang }: { lang: Lang }) {
   const c = t.companies;
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [offers, setOffers] = useState<Offer[] | null>(null);
-  const [region, setRegion] = useState<Region | "all">("all");
+  const [region, setRegion] = useState<Region | "all" | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [prep, setPrep] = useState<Offer | null>(null);
 
   useEffect(() => {
     const p = store.getProfile();
     setProfile(p);
-    if (p) setRegion(p.region);
-    // Recherche large (sans métier) pour voir toutes les entreprises qui recrutent dans la zone.
-    const qs = new URLSearchParams();
-    if (p?.city) qs.set("where", p.city);
+    setRegion(p?.region ?? "all");
+  }, []);
+
+  // Recherche large (toute la région, sans métier) pour voir qui recrute vraiment.
+  useEffect(() => {
+    if (region === null) return;
+    setOffers(null);
+    const qs = new URLSearchParams({ scope: "companies" });
+    if (region !== "all") qs.set("region", region);
     fetch(`/api/offers?${qs}`)
       .then((r) => r.json())
       .then((d: { offers: Offer[] }) => setOffers(d.offers))
       .catch(() => setOffers([]));
-  }, []);
+  }, [region]);
 
   const companies = useMemo(
-    () => groupByCompany((offers ?? []).filter((o) => region === "all" || o.region === region)),
+    () => groupByCompany((offers ?? []).filter((o) => region === "all" || region === null || o.region === region)),
     [offers, region],
   );
 
@@ -113,7 +119,7 @@ export default function CompanyList({ lang }: { lang: Lang }) {
                 <div className="grow">
                   <b>{co.name}</b>
                   <div className="muted small">
-                    {co.cities.slice(0, 3).join(", ")} · {co.offers.length} {co.offers.length > 1 ? c.offers : c.one}
+                    {[...new Set(co.cities.map((x) => cityLabel(x, lang)))].slice(0, 3).join(", ")} · {co.offers.length} {co.offers.length > 1 ? c.offers : c.one}
                   </div>
                 </div>
                 {co.offers.length > 1 && <span className="tag lime">{c.active}</span>}
@@ -129,7 +135,7 @@ export default function CompanyList({ lang }: { lang: Lang }) {
                   {co.offers.map((o) => (
                     <li key={o.id}>
                       <a href={o.url} target="_blank" rel="noreferrer"><b>{o.title}</b></a>
-                      <span className="muted">{t.contracts[o.contract]} · {o.city}</span>
+                      <span className="muted">{t.contracts[o.contract]} · {cityLabel(o.city, lang)}</span>
                     </li>
                   ))}
                 </ul>

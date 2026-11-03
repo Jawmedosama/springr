@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { matchOffer, type MatchResult } from "@/lib/match";
 import { store } from "@/lib/store";
@@ -35,11 +36,12 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [toast, setToast] = useState<string | null>(null);
   const start = useRef<number | null>(null);
 
-  const load = useCallback((w: string, c: string) => {
+  const load = useCallback((w: string, c: string, km?: number) => {
     setOffers(null);
     const qs = new URLSearchParams();
     if (w.trim()) qs.set("what", w.trim());
     if (c.trim()) qs.set("where", c.trim());
+    if (km) qs.set("km", String(km));
     fetch(`/api/offers?${qs}`)
       .then((r) => r.json())
       .then((d: { offers: Offer[]; demo: boolean; filtered: number }) => {
@@ -57,7 +59,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     const c = p?.city ?? "";
     setWhat(w);
     setWhere(c);
-    load(w, c);
+    load(w, c, p?.mobilityKm);
   }, [load]);
 
   const ranked: Ranked[] = useMemo(() => {
@@ -67,7 +69,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
       .filter((x) => contract === "all" || x.contract === contract)
       .map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null }));
     return profile
-      ? list.sort((a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0))
+      ? list.sort((a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0) || b.offer.publishedAt.localeCompare(a.offer.publishedAt))
       : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
   }, [offers, profile, seen, lang, contract]);
 
@@ -104,7 +106,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    load(what, where);
+    load(what, where, profile?.mobilityKm);
   }
 
   function openPrep(offer: Offer) {
@@ -165,6 +167,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
                   key={r.offer.id}
                   offer={r.offer}
                   t={t}
+                  lang={lang}
                   score={r.m?.score}
                   className={i === arr.length - 1 ? "behind" : "behind2"}
                 />
@@ -173,6 +176,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
                 key={current.offer.id}
                 offer={current.offer}
                 t={t}
+                lang={lang}
                 score={current.m?.score}
                 className="front"
                 style={frontStyle}
@@ -197,9 +201,10 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
               >
                 {drag > 40 && <span className="stamp keep" style={{ opacity: Math.min(1, drag / THRESHOLD) }}>{o.like}</span>}
                 {drag < -40 && <span className="stamp pass" style={{ opacity: Math.min(1, -drag / THRESHOLD) }}>{o.pass}</span>}
-                {current.m && current.m.reasons.length > 0 && (
+                {current.m && current.m.reasons.length + current.m.warnings.length > 0 && (
                   <ul className="reasons">
                     {current.m.reasons.slice(0, 3).map((r) => <li key={r}>{r}</li>)}
+                    {current.m.warnings.slice(0, 1).map((r) => <li key={r} className="minus">{r}</li>)}
                   </ul>
                 )}
               </OfferCard>
@@ -227,7 +232,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
               <div>
                 <span className="tag">{t.contracts[detail.offer.contract]}</span>
                 <h2 style={{ marginTop: 10 }}>{detail.offer.title}</h2>
-                <p className="muted" style={{ margin: 0 }}>{detail.offer.company} · {detail.offer.city}</p>
+                <p className="muted" style={{ margin: 0 }}>{detail.offer.company} · {cityLabel(detail.offer.city, lang)}</p>
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 {detail.m && <MatchRing score={detail.m.score} label={o.match} />}
@@ -235,19 +240,23 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
               </div>
             </div>
             {detail.offer.salary && <p className="salary" style={{ margin: 0 }}>{detail.offer.salary}</p>}
-            {detail.m && detail.m.reasons.length > 0 && (
+            {detail.m && detail.m.reasons.length + detail.m.warnings.length > 0 && (
               <div className="panel" style={{ background: "var(--bg)" }}>
                 <h3>{o.why}</h3>
-                <ul className="reasons">{detail.m.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+                <ul className="reasons">
+                  {detail.m.reasons.map((r) => <li key={r}>{r}</li>)}
+                  {detail.m.warnings.map((r) => <li key={r} className="minus">{r}</li>)}
+                </ul>
               </div>
             )}
-            <p style={{ whiteSpace: "pre-line" }}>{detail.offer.description}</p>
+            <p style={{ whiteSpace: "pre-line", margin: 0 }}>{detail.offer.description}</p>
+            {detail.offer.description.trim().endsWith("…") && <p className="muted small" style={{ margin: 0 }}>{o.excerpt}</p>}
             <p className="muted small" style={{ margin: 0 }}>{o.source} : {detail.offer.source}</p>
             <div className="sheet-actions">
-              <button className="btn brand" onClick={() => openPrep(detail.offer)}>{o.prepare}</button>
               {detail.offer.url && detail.offer.url !== "#" && (
-                <a className="btn" href={detail.offer.url} target="_blank" rel="noreferrer">{o.open}</a>
+                <a className="btn dark" href={detail.offer.url} target="_blank" rel="noreferrer">{o.open}</a>
               )}
+              <button className="btn brand" onClick={() => openPrep(detail.offer)}>{o.prepare}</button>
               <button className="btn" onClick={() => { setDetail(null); decide(true); }}>{o.like}</button>
             </div>
           </div>

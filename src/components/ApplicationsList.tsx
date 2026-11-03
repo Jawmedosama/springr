@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
 import type { Application, ApplicationStatus, Lang, Profile } from "@/lib/types";
@@ -83,15 +84,14 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
                     <div className="grow">
                       <a href={x.offer.url} target="_blank" rel="noreferrer"><b>{x.spontaneous ? x.offer.company : x.offer.title}</b></a>
                       <div className="muted small">
-                        {x.spontaneous ? `${a.spontaneous} · ${x.offer.city}` : `${x.offer.company} · ${x.offer.city}`}
+                        {x.spontaneous ? a.spontaneous : x.offer.company} · {cityLabel(x.offer.city, lang)}
                       </div>
                     </div>
                     {due && <span className="tag warn">{a.due}</span>}
                   </div>
                   <div className="app-controls">
-                    <label className="small">
-                      <span className={`status status-${x.status}`}>{t.status[x.status]}</span>
-                      <select value={x.status} onChange={(e) => update(x.offer.id, { status: e.target.value as ApplicationStatus })}>
+                    <label className="small">{a.status}
+                      <select className={`status status-${x.status}`} value={x.status} onChange={(e) => update(x.offer.id, { status: e.target.value as ApplicationStatus })}>
                         {STATUSES.map((s) => <option key={s} value={s}>{t.status[s]}</option>)}
                       </select>
                     </label>

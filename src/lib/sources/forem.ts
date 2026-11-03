@@ -19,8 +19,9 @@ function mapContract(raw: string): ContractType {
   if (s.includes("stage")) return "stage";
   if (s.includes("altern")) return "alternance";
   if (s.includes("intérim") || s.includes("interim")) return "interim";
+  if (s.includes("indéterminée") || s.includes("cdi")) return "cdi";
   if (s.includes("déterminée") || s.includes("cdd")) return "cdd";
-  return "cdi";
+  return "nc";
 }
 
 /**

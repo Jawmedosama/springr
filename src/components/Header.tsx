@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Dict } from "@/lib/i18n";
+import { store } from "@/lib/store";
 import type { Lang } from "@/lib/types";
 import { IconBuilding, IconCards, IconList, IconMenu, IconUser } from "./Icons";
 
@@ -23,6 +24,8 @@ export function Logo({ lang, brand }: { lang: Lang; brand: string }) {
 export default function Header({ lang, t }: { lang: Lang; t: Dict }) {
   const path = usePathname() ?? "";
   const [open, setOpen] = useState(false);
+  const [hasProfile, setHasProfile] = useState(false);
+  useEffect(() => setHasProfile(Boolean(store.getProfile())), [path]);
   const other = lang === "fr" ? "nl" : "fr";
   const switchTo = path.replace(/^\/(fr|nl)/, `/${other}`) || `/${other}`;
   const isHome = path === `/${lang}`;
@@ -41,6 +44,10 @@ export default function Header({ lang, t }: { lang: Lang; t: Dict }) {
       ]
     : app;
 
+  const cta = hasProfile
+    ? { href: `/${lang}/offres`, label: t.nav.offers }
+    : { href: `/${lang}/inscription`, label: t.nav.start };
+
   return (
     <>
       <header className="top">
@@ -55,7 +62,7 @@ export default function Header({ lang, t }: { lang: Lang; t: Dict }) {
           </nav>
           <div className="top-right">
             <Link href={switchTo} className="lang-switch" hrefLang={other}>{other.toUpperCase()}</Link>
-            <Link href={`/${lang}/inscription`} className="btn dark small">{t.nav.start}</Link>
+            <Link href={cta.href} className="btn dark small">{cta.label}</Link>
             <button className="burger" aria-label={t.nav.menu} aria-expanded={open} onClick={() => setOpen(!open)}>
               <IconMenu className="" />
             </button>
@@ -63,7 +70,7 @@ export default function Header({ lang, t }: { lang: Lang; t: Dict }) {
         </div>
         <nav className={open ? "mobile-menu open" : "mobile-menu"} onClick={() => setOpen(false)}>
           {links.map((l) => <Link key={l.href} href={l.href}>{l.label}</Link>)}
-          <Link href={`/${lang}/inscription`} className="btn dark">{t.nav.start}</Link>
+          <Link href={cta.href} className="btn dark">{cta.label}</Link>
         </nav>
       </header>
       {!isHome && (
