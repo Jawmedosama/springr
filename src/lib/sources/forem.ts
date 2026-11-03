@@ -50,6 +50,12 @@ function mapContract(raw: string, title: string): ContractType {
   return "nc";
 }
 
+/** Le Forem répète parfois le nom : « BETUNED - BETUNED ». */
+function cleanCompany(name: string): string {
+  const [a, b] = name.split(" - ");
+  return b && a.trim().toLowerCase() === b.trim().toLowerCase() ? a.trim() : name;
+}
+
 function titleCase(s: string): string {
   return s.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
 }
@@ -76,7 +82,7 @@ function toOffer(r: Rec): Offer {
   return {
     id: `forem-${r.numerooffreforem}`,
     title,
-    company: r.nomemployeur ?? "",
+    company: cleanCompany(r.nomemployeur ?? ""),
     city: titleCase(r.lieuxtravaillocalite?.[0] ?? ""),
     postcode,
     region: region ?? undefined,

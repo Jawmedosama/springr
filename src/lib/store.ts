@@ -28,21 +28,48 @@ function write(key: string, value: unknown) {
   }
 }
 
+export type StoreChange =
+  | { kind: "profile" | "apps" | "seen" }
+  | { kind: "appRemoved"; id: string }
+  | { kind: "seenReset" };
+
+let listener: ((c: StoreChange) => void) | null = null;
+
+/** Prévenu à chaque changement, pour la synchronisation avec le compte. */
+export function setStoreListener(l: typeof listener) {
+  listener = l;
+}
+
 export function inDays(days: number): string {
   return new Date(Date.now() + days * 24 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
 export const store = {
   getProfile: () => read<Profile | null>(K.profile, null),
-  setProfile: (p: Profile) => write(K.profile, p),
+  setProfile: (p: Profile) => {
+    write(K.profile, p);
+    listener?.({ kind: "profile" });
+  },
   getApps: () => read<Application[]>(K.apps, []),
-  setApps: (a: Application[]) => write(K.apps, a),
+  setApps: (a: Application[]) => {
+    write(K.apps, a);
+    listener?.({ kind: "apps" });
+  },
+  removeApp: (id: string) => {
+    write(K.apps, read<Application[]>(K.apps, []).filter((a) => a.offer.id !== id));
+    listener?.({ kind: "appRemoved", id });
+  },
   getSeen: () => new Set(read<string[]>(K.seen, [])),
   markSeen: (id: string) => {
     const s = read<string[]>(K.seen, []);
-    if (!s.includes(id)) write(K.seen, [...s, id]);
+    if (s.includes(id)) return;
+    write(K.seen, [...s, id]);
+    listener?.({ kind: "seen" });
   },
-  resetSeen: () => write(K.seen, []),
+  resetSeen: () => {
+    write(K.seen, []);
+    listener?.({ kind: "seenReset" });
+  },
   /** Ajoute l'offre au suivi, ou met à jour la candidature existante. */
   saveOffer: (offer: Offer, patch: Partial<Application> = {}) => {
     const apps = read<Application[]>(K.apps, []);
@@ -51,12 +78,14 @@ export const store = {
     if (i >= 0) {
       apps[i] = { ...apps[i], ...patch, updatedAt: now };
       write(K.apps, apps);
+      listener?.({ kind: "apps" });
       return;
     }
     write(K.apps, [
       { offer, status: "a_postuler", updatedAt: now, remindAt: inDays(FOLLOW_UP_DAYS), ...patch },
       ...apps,
     ]);
+    listener?.({ kind: "apps" });
   },
   clearAll: () => {
     try {

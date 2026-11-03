@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
+import AuthSync from "@/components/AuthSync";
 import Header, { Logo } from "@/components/Header";
 import { getDict, isLang, LANGS } from "@/lib/i18n";
 import "../globals.css";
@@ -35,6 +36,7 @@ export default async function LangLayout({
   return (
     <html lang={lang} className={`${display.variable} ${body.variable}`}>
       <body>
+        <AuthSync />
         <Header lang={lang} t={t} />
         {children}
         <footer className="foot">

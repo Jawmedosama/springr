@@ -99,7 +99,10 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
                       <input type="date" value={x.remindAt ?? ""} onChange={(e) => update(x.offer.id, { remindAt: e.target.value })} />
                     </label>
                     {profile && <button className="btn small" onClick={() => setPrep(x)}>{a.prepare}</button>}
-                    <button className="btn small ghost" onClick={() => commit(apps.filter((y) => y.offer.id !== x.offer.id))}>{a.remove}</button>
+                    <button className="btn small ghost" onClick={() => {
+                      store.removeApp(x.offer.id);
+                      setApps(store.getApps());
+                    }}>{a.remove}</button>
                   </div>
                   <textarea
                     aria-label={a.notes}

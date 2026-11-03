@@ -1,5 +1,5 @@
--- Schéma Supabase (Postgres, région UE) pour remplacer le stockage local du prototype.
-create extension if not exists vector;
+-- Schéma Supabase (Postgres, région UE) pour les comptes Springr.
+-- À coller une seule fois dans Supabase > SQL Editor.
 
 create table profiles (
   id uuid primary key references auth.users on delete cascade,
@@ -8,58 +8,41 @@ create table profiles (
   birth_date date not null,
   street text not null,
   house_number text not null,
-  postcode char(4) not null check (postcode ~ '^[1-9][0-9]{3}$'),
+  postcode char(4) not null check (postcode ~ '^[1-9][0-9]{3}$' and postcode::int <= 9992),
   city text not null,
   region text not null check (region in ('bruxelles','wallonie','flandre')),
-  declared_resident boolean not null default false,
-  residence_verified_by text, -- 'email', plus tard 'itsme' ou 'eid'
+  declared_resident boolean not null check (declared_resident),
   study_level text,
   field text,
-  skills text[] default '{}',
-  languages text[] default '{}',
-  contracts text[] default '{}',
-  mobility_km int default 30,
-  ui_lang text not null default 'fr' check (ui_lang in ('fr','nl')),
-  matching_enabled boolean not null default true, -- droit de désactiver le profilage
+  skills text[] not null default '{}',
+  languages text[] not null default '{}',
+  contracts text[] not null default '{}',
+  mobility_km int not null default 30,
+  cv_text text,
   created_at timestamptz not null default now()
   -- L'âge (16 à 35 ans) est vérifié à l'inscription par l'application, pas par une contrainte,
   -- car il change avec le temps.
 );
 
-create table offers (
-  id text primary key,            -- ex. 'adzuna-123', 'forem-456'
-  source text not null,
-  title text not null,
-  company text,
-  city text,
-  postcode char(4),
-  region text,
-  contract text not null,
-  description text,
-  language text,
-  url text not null,
-  salary text,
-  published_at timestamptz,
-  dedupe_key text not null,
-  embedding vector(1024),
-  fetched_at timestamptz not null default now()
-);
-create unique index offers_dedupe on offers (dedupe_key);
-
+-- L'offre est copiée dans la candidature : une annonce peut disparaître de sa source.
 create table applications (
-  user_id uuid references profiles on delete cascade,
-  offer_id text references offers on delete cascade,
-  status text not null default 'a_postuler',
+  user_id uuid not null references profiles on delete cascade,
+  offer_id text not null,
+  offer jsonb not null,
+  status text not null default 'a_postuler'
+    check (status in ('a_postuler','envoyee','entretien','refusee','acceptee')),
   remind_at date,
   notes text,
+  letter text,
+  cv text,
+  spontaneous boolean not null default false,
   updated_at timestamptz not null default now(),
   primary key (user_id, offer_id)
 );
 
-create table swipes (
-  user_id uuid references profiles on delete cascade,
-  offer_id text references offers on delete cascade,
-  liked boolean not null,
+create table seen_offers (
+  user_id uuid not null references profiles on delete cascade,
+  offer_id text not null,
   created_at timestamptz not null default now(),
   primary key (user_id, offer_id)
 );
@@ -67,9 +50,19 @@ create table swipes (
 -- Chaque personne ne voit et ne modifie que ses propres données.
 alter table profiles enable row level security;
 alter table applications enable row level security;
-alter table swipes enable row level security;
-create policy own_profile on profiles for all using (auth.uid() = id) with check (auth.uid() = id);
-create policy own_apps on applications for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy own_swipes on swipes for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-alter table offers enable row level security;
-create policy read_offers on offers for select using (true);
+alter table seen_offers enable row level security;
+
+create policy own_profile on profiles for all to authenticated
+  using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
+create policy own_apps on applications for all to authenticated
+  using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+create policy own_seen on seen_offers for all to authenticated
+  using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+
+-- Droit à l'effacement : supprime le compte, et par cascade toutes ses données.
+create function delete_my_account() returns void
+language sql security definer set search_path = ''
+as $$ delete from auth.users where id = (select auth.uid()); $$;
+
+revoke execute on function delete_my_account() from public, anon;
+grant execute on function delete_my_account() to authenticated;

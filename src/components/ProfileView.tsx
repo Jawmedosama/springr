@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
+import { getSupabase } from "@/lib/supabase";
+import { deleteAccount, signOut } from "@/lib/sync";
 import type { Lang, Profile } from "@/lib/types";
 import { initials } from "./OfferCard";
 
@@ -12,8 +14,13 @@ export default function ProfileView({ lang }: { lang: Lang }) {
   const p = t.profile;
   const s = t.signup;
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
+  const [account, setAccount] = useState<string | null>(null);
+  const canLogin = Boolean(getSupabase());
 
-  useEffect(() => setProfile(store.getProfile()), []);
+  useEffect(() => {
+    setProfile(store.getProfile());
+    getSupabase()?.auth.getSession().then(({ data }) => setAccount(data.session?.user.email ?? null));
+  }, []);
 
   if (profile === undefined) return <main className="page" />;
   if (!profile)
@@ -23,13 +30,22 @@ export default function ProfileView({ lang }: { lang: Lang }) {
         <div className="empty">
           <p style={{ margin: 0 }}>{p.none}</p>
           <Link className="btn dark" href={`/${lang}/inscription`}>{p.create}</Link>
+          {canLogin && <Link className="btn" href={`/${lang}/connexion`}>{t.auth.haveAccount}</Link>}
         </div>
       </main>
     );
 
-  function erase() {
-    if (!window.confirm(p.eraseConfirm)) return;
-    store.clearAll();
+  async function erase() {
+    if (!window.confirm(account ? t.auth.deleteConfirm : p.eraseConfirm)) return;
+    if (account) await deleteAccount();
+    else store.clearAll();
+    setAccount(null);
+    setProfile(null);
+  }
+
+  async function logout() {
+    await signOut();
+    setAccount(null);
     setProfile(null);
   }
 
@@ -47,6 +63,23 @@ export default function ProfileView({ lang }: { lang: Lang }) {
       </div>
 
       <div className="form">
+        {canLogin && (
+          <section className="panel">
+            <h3>{t.auth.account}</h3>
+            {account ? (
+              <>
+                <p className="muted" style={{ margin: 0 }}>{t.auth.connected} {account}. {t.auth.synced}</p>
+                <div><button className="btn small" onClick={logout}>{t.auth.logout}</button></div>
+              </>
+            ) : (
+              <>
+                <p className="muted" style={{ margin: 0 }}>{t.auth.saveText}</p>
+                <div><Link className="btn dark small" href={`/${lang}/connexion`}>{t.auth.save}</Link></div>
+              </>
+            )}
+          </section>
+        )}
+
         <section className="panel">
           <h3>{p.residence}</h3>
           <dl className="dl">
@@ -86,7 +119,7 @@ export default function ProfileView({ lang }: { lang: Lang }) {
 
         <section className="panel">
           <h3>{p.data}</h3>
-          <p className="muted" style={{ margin: 0 }}>{p.dataText}</p>
+          <p className="muted" style={{ margin: 0 }}>{account ? t.auth.dataText : p.dataText}</p>
           <div><button className="btn small" onClick={erase} style={{ color: "var(--bad)" }}>{p.erase}</button></div>
         </section>
       </div>
