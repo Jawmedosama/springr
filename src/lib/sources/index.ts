@@ -35,7 +35,7 @@ export function dedupe(offers: Offer[]): Offer[] {
 
 /** Agences d'intérim, de recrutement, sites d'emploi et organismes de formation : on ne garde que les offres d'entreprises. */
 const INTERMEDIARIES =
-  /\b(randstad|adecco|manpower|start ?people|tempo[- ]?team|unique interim|accent|synergie|daoust|trace|express medical|agilitas|hays|michael page|page personnel|robert half|t-interim|actief|asap|vivaldis|konvert|select human|ago jobs|crit|axxon|solvus|go4jobs|bright plus|itzu|dajobs|ctrl-f|triangle solutions|demain selection|werkenvoor|interim|intérim|recruitment|recruiting|recrutement|staffing|headhunt\w*|executive search|uitzend\w*|werving|selectie|rh|hr|human resources|centre de formation|ifapme|syntra)\b|\bjobs?$|\.be$/i;
+  /^impact\b|\b(randstad|adecco|manpower|start ?people|tempo[- ]?team|unique interim|accent|synergie|daoust|trace|express medical|agilitas|hays|michael page|page personnel|robert half|t-interim|actief|asap|vivaldis|konvert|select human|ago jobs|crit|axxon|solvus|go4jobs|bright plus|itzu|dajobs|superprof|job ?& ?talent|ctrl-f|triangle solutions|demain selection|werkenvoor|interim|intérim|recruitment|recruiting|recrutement|staffing|headhunt\w*|executive search|uitzend\w*|werving|selectie|rh|hr|human resources|centre de formation|ifapme|syntra)\b|\bjobs?$|\.be$/i;
 
 /** Formules typiques d'une annonce publiée pour le compte d'un tiers. */
 const THIRD_PARTY = /\b(notre client|nos clients|pour le compte de|onze klant|onze klanten|our client)\b/i;
