@@ -43,7 +43,7 @@ const WALLONIE =
   /\b(wallon\w*|waals\w*|wallonie|walloni[eë]|hainaut|henegouwen|li[eè]ge|luik|namur|namen|luxembourg|luxemburg|nivelles|nijvel|wavre|waver|charleroi|mons|bergen|tournai|doornik|mouscron|moeskroen|verviers|huy|hoei|waremme|borgworm|dinant|philippeville|thuin|soignies|zinnik|ath|aat|arlon|aarlen|bastogne|bastenaken|neufch[aâ]teau|marche-en-famenne|virton)\b/i;
 const FLANDRE =
   /\b(vlaander\w*|vlaams\w*|flandre\w*|antwerpen|anvers|gent|gand|limburg|limbourg|leuven|louvain|halle-vilvoorde|mechelen|malines|turnhout|hasselt|tongeren|maaseik|brugge|bruges|kortrijk|courtrai|oostende|ostende|roeselare|ieper|ypres|aalst|alost|dendermonde|sint-niklaas|oudenaarde|eeklo|tielt|veurne|diksmuide)\b/i;
-const BRUXELLES = /\b(bruxelles|brussel|brussels)\b/i;
+const BRUXELLES = /\b(bruxelles|brussel|brussels|ixelles|elsene|uccle|ukkel|etterbeek|schaerbeek|schaarbeek|anderlecht|molenbeek|forest|vorst|evere|jette|ganshoren|koekelberg|auderghem|oudergem|saint-gilles|sint-gillis|saint-josse|woluwe\S*|watermael\S*)\b/i;
 
 /**
  * Région d'après le lieu d'une offre. Adzuna donne les lieux en néerlandais (Nijvel, Namen, Luik).

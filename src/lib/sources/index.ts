@@ -1,6 +1,8 @@
 import { cityLabel } from "../belgium";
 import type { Offer, Region } from "../types";
 import { fetchAdzuna } from "./adzuna";
+import { fetchCareerjet, fetchJooble } from "./aggregators";
+import { fetchCareers } from "./careers";
 import { fetchForem } from "./forem";
 import { SAMPLE_OFFERS } from "./sample";
 
@@ -74,6 +76,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   const calls: Promise<Offer[]>[] = [fetchForem({ what, where, km }), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
+  calls.push(fetchCareers({ what, where }), fetchJooble(what, where, km), fetchCareerjet(what, where));
   return finish(await Promise.allSettled(calls));
 }
 
@@ -90,5 +93,5 @@ export async function getRegionOffers(region?: Region): Promise<OffersResult> {
     cities.length > 1
       ? cities.map((c) => fetchAdzuna("", 1, c, 30))
       : [1, 2, 3, 4, 5].map((p) => fetchAdzuna("", p, cities[0], 30));
-  return finish(await Promise.allSettled([fetchForem({ region }), ...calls]));
+  return finish(await Promise.allSettled([fetchForem({ region }), fetchCareers({ region }), ...calls]));
 }

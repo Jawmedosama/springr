@@ -430,3 +430,5 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .card-company span svg { vertical-align: -2px; }
 .mobile-menu .btn { margin-top: 8px; }
 .burger svg { width: 20px; height: 20px; }
+
+.elsewhere { display: grid; gap: 8px; margin-top: 20px; }

@@ -9,6 +9,7 @@ import { store } from "@/lib/store";
 import type { ContractType, Lang, Offer, Profile } from "@/lib/types";
 import OfferCard, { MatchRing } from "./OfferCard";
 import PrepSheet from "./PrepSheet";
+import SearchElsewhere from "./SearchElsewhere";
 import { IconHeart, IconInfo, IconPen, IconX } from "./Icons";
 
 const CONTRACTS: ContractType[] = ["etudiant", "stage", "alternance", "cdd", "cdi"];
@@ -26,7 +27,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [offers, setOffers] = useState<Offer[] | null>(null);
   const [demo, setDemo] = useState(false);
   const [agencies, setAgencies] = useState<Offer[]>([]);
-  const [showAgencies, setShowAgencies] = useState(false);
+  const [showAgencies, setShowAgencies] = useState(true);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const [what, setWhat] = useState("");
   const [where, setWhere] = useState("");
@@ -72,7 +73,12 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
       .filter((x) => contract === "all" || x.contract === contract)
       .map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null }));
     return profile
-      ? list.sort((a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0) || b.offer.publishedAt.localeCompare(a.offer.publishedAt))
+      ? list.sort(
+          (a, b) =>
+            (b.m?.score ?? 0) - (a.m?.score ?? 0) ||
+            Number(a.offer.agency ?? false) - Number(b.offer.agency ?? false) ||
+            b.offer.publishedAt.localeCompare(a.offer.publishedAt),
+        )
       : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
   }, [offers, agencies, showAgencies, profile, seen, lang, contract]);
 
@@ -151,13 +157,6 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         {demo && <p className="banner">{o.demo}</p>}
         {profile === null && (
           <p className="banner ok">{o.noProfile} <Link href={`/${lang}/inscription`}>{t.nav.start} →</Link></p>
-        )}
-
-        {offers !== null && !showAgencies && ranked.length < 10 && agencies.length > 0 && (
-          <p className="banner">
-            {o.few}{" "}
-            <button className="btn small" onClick={() => setShowAgencies(true)}>{o.showAgencies} ({agencies.length})</button>
-          </p>
         )}
 
         {offers === null || profile === undefined ? (
@@ -239,6 +238,8 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         )}
       </div>
 
+      <SearchElsewhere t={t} what={what} where={where} />
+
       {detail && (
         <div className="sheet-bg" onClick={() => setDetail(null)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-label={detail.offer.title} onClick={(e) => e.stopPropagation()}>
@@ -266,6 +267,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
             <p style={{ whiteSpace: "pre-line", margin: 0 }}>{detail.offer.description}</p>
             {detail.offer.description.trim().endsWith("…") && <p className="muted small" style={{ margin: 0 }}>{o.excerpt}</p>}
             <p className="muted small" style={{ margin: 0 }}>{o.source} : {detail.offer.source}</p>
+            <SearchElsewhere t={t} what={detail.offer.title} where={cityLabel(detail.offer.city, lang)} />
             <div className="sheet-actions">
               {detail.offer.url && detail.offer.url !== "#" && (
                 <a className="btn dark" href={detail.offer.url} target="_blank" rel="noreferrer">{o.open}</a>
