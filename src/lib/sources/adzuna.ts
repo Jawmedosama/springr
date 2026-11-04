@@ -1,4 +1,4 @@
-import { regionFromPlace } from "../belgium";
+import { provinceFromPlace, regionFromPlace } from "../belgium";
 import type { ContractType, Offer } from "../types";
 
 interface AdzunaJob {
@@ -59,6 +59,7 @@ export async function fetchAdzuna(what = "", page = 1, where = "", km = 30): Pro
     company: j.company?.display_name ?? "",
     city: j.location?.display_name ?? "",
     region: regionFromPlace([...(j.location?.area ?? []), j.location?.display_name ?? ""].join(", ")),
+    province: provinceFromPlace([...(j.location?.area ?? []), j.location?.display_name ?? ""].join(", ")),
     contract: guessContract(j),
     description: j.description.replace(/<[^>]+>/g, ""),
     url: j.redirect_url,

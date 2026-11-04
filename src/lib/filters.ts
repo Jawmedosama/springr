@@ -1,15 +1,19 @@
 import { isAccessible } from "./accessible";
-import { cityLabel } from "./belgium";
-import type { ContractType, Offer, Region } from "./types";
+import { isGermanSpeaking } from "./belgium";
+import type { ContractType, Offer, Province, Region } from "./types";
 
 export type AdLang = "fr" | "nl" | "en";
 export type Hours = "partiel" | "weekend" | "soir";
+export type AreaChoice = Region | "germanophone";
 
 export interface Filters {
   contracts: ContractType[];
-  regions: Region[];
-  /** Commune recherchée dans les offres affichées. */
-  city: string;
+  regions: AreaChoice[];
+  provinces: Province[];
+  /** Villes recherchées, à la place de celle du profil. */
+  cities: string[];
+  /** Ignore la ville du profil. */
+  allBelgium: boolean;
   lang: AdLang | null;
   /** Publiée depuis moins de N jours. */
   days: number | null;
@@ -20,10 +24,11 @@ export interface Filters {
   hideAgencies: boolean;
 }
 
-export const NO_FILTERS: Filters = { contracts: [], regions: [], city: "", lang: null, days: null, km: null, hours: [], easy: false, hideAgencies: false };
+export const NO_FILTERS: Filters = { contracts: [], regions: [], provinces: [], cities: [], allBelgium: false, lang: null, days: null, km: null, hours: [], easy: false, hideAgencies: false };
 
 export const CONTRACT_CHOICES: ContractType[] = ["etudiant", "flexi", "stage", "alternance", "cdd", "cdi", "interim"];
-export const REGION_CHOICES: Region[] = ["bruxelles", "wallonie", "flandre"];
+export const REGION_CHOICES: AreaChoice[] = ["bruxelles", "wallonie", "flandre", "germanophone"];
+export const PROVINCE_CHOICES: Province[] = ["brabant-wallon", "hainaut", "liege", "luxembourg", "namur", "anvers", "brabant-flamand", "flandre-occidentale", "flandre-orientale", "limbourg"];
 export const DAY_CHOICES = [1, 7, 30];
 export const KM_CHOICES = [5, 10, 30, 50, 100];
 export const HOUR_CHOICES: Hours[] = ["partiel", "weekend", "soir"];
@@ -52,17 +57,12 @@ const HOURS: Record<Hours, RegExp> = {
   soir: /\bsoir|soirée|avond|\bnuit\b|nacht/i,
 };
 
-const plain = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-function inCity(o: Offer, city: string): boolean {
-  const wanted = plain(city.trim());
-  return [o.city, cityLabel(o.city, "fr"), cityLabel(o.city, "nl")].some((c) => plain(c).includes(wanted));
-}
+const inArea = (o: Offer, a: AreaChoice) => (a === "germanophone" ? isGermanSpeaking(o) : o.region === a);
 
 export function matchesFilters(o: Offer, f: Filters): boolean {
   if (f.contracts.length && !f.contracts.includes(o.contract)) return false;
-  if (f.regions.length && !(o.region && f.regions.includes(o.region))) return false;
-  if (f.city.trim() && !inCity(o, f.city)) return false;
+  if (f.regions.length && !f.regions.some((a) => inArea(o, a))) return false;
+  if (f.provinces.length && !(o.province && f.provinces.includes(o.province))) return false;
   if (f.lang) {
     if (adLanguage(o) !== f.lang) return false;
     if (f.lang === "fr" && asksDutch(o)) return false;
@@ -75,7 +75,27 @@ export function matchesFilters(o: Offer, f: Filters): boolean {
 }
 
 export function activeCount(f: Filters): number {
-  return f.contracts.length + f.regions.length + f.hours.length + [f.city.trim(), f.lang, f.days, f.km, f.easy || null, f.hideAgencies || null].filter(Boolean).length;
+  return f.contracts.length + f.regions.length + f.provinces.length + f.cities.length + f.hours.length + [f.allBelgium || null, f.lang, f.days, f.km, f.easy || null, f.hideAgencies || null].filter(Boolean).length;
+}
+
+/** Ce qui demande une nouvelle recherche, et non un simple tri des offres déjà chargées. */
+export function searchKey(f: Filters): string {
+  return JSON.stringify([f.km, f.contracts, f.regions, f.provinces, f.cities, f.allBelgium]);
+}
+
+/** Le lieu choisi dans les filtres remplace la ville du profil, sans modifier le profil. */
+export function searchParams(what: string, where: string, f: Filters, profileKm?: number): URLSearchParams {
+  const qs = new URLSearchParams();
+  const place = f.allBelgium || f.provinces.length ? "" : f.cities.length ? f.cities.join(",") : where.trim();
+  const km = f.km ?? profileKm;
+  const real = f.regions.filter((r): r is Region => r !== "germanophone");
+  if (what.trim()) qs.set("what", what.trim());
+  if (place) qs.set("where", place);
+  if (km) qs.set("km", String(km));
+  if (f.contracts.length) qs.set("contracts", f.contracts.join(","));
+  if (f.provinces.length) qs.set("provinces", f.provinces.join(","));
+  if (real.length === 1 && !place) qs.set("region", real[0]);
+  return qs;
 }
 
 const KEY = "springr.filters";

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cityLabel } from "@/lib/belgium";
-import { activeCount, loadFilters, matchesFilters, NO_FILTERS, saveFilters, type Filters } from "@/lib/filters";
+import { activeCount, loadFilters, matchesFilters, NO_FILTERS, saveFilters, searchKey, searchParams, type Filters } from "@/lib/filters";
 import { getDict } from "@/lib/i18n";
 import { matchOffer, type MatchResult } from "@/lib/match";
 import { store } from "@/lib/store";
@@ -39,17 +39,15 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [toast, setToast] = useState<string | null>(null);
   const start = useRef<number | null>(null);
 
-  const load = useCallback((w: string, c: string, km?: number, contracts: string[] = [], regions: string[] = []) => {
+  const latest = useRef(0);
+
+  const load = useCallback((w: string, c: string, f: Filters, km?: number) => {
     setOffers(null);
-    const qs = new URLSearchParams();
-    if (w.trim()) qs.set("what", w.trim());
-    if (c.trim()) qs.set("where", c.trim());
-    if (km) qs.set("km", String(km));
-    if (contracts.length) qs.set("contracts", contracts.join(","));
-    if (regions.length === 1 && !c.trim()) qs.set("region", regions[0]);
-    fetch(`/api/offers?${qs}`)
+    const id = ++latest.current;
+    fetch(`/api/offers?${searchParams(w, c, f, km)}`)
       .then((r) => r.json())
       .then((d: { offers: Offer[]; agencies: Offer[]; demo: boolean }) => {
+        if (id !== latest.current) return;
         setOffers(d.offers);
         setAgencies(d.agencies ?? []);
         setDemo(d.demo);
@@ -67,7 +65,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     setWhere(c);
     const f = loadFilters();
     setFilters(f);
-    load(w, c, f.km ?? p?.mobilityKm, f.contracts, f.regions);
+    load(w, c, f, p?.mobilityKm);
   }, [load]);
 
   const ranked: Ranked[] = useMemo(() => {
@@ -85,15 +83,6 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         )
       : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
   }, [offers, agencies, filters, profile, seen, lang]);
-
-  const cities = useMemo(() => {
-    const n = new Map<string, number>();
-    for (const o of [...(offers ?? []), ...agencies]) {
-      const c = cityLabel(o.city, lang);
-      if (c) n.set(c, (n.get(c) ?? 0) + 1);
-    }
-    return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c).slice(0, 60);
-  }, [offers, agencies, lang]);
 
   const current = ranked[0];
 
@@ -129,14 +118,12 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   function changeFilters(next: Filters) {
     setFilters(next);
     saveFilters(next);
-    if (next.km !== filters.km || next.contracts.join() !== filters.contracts.join() || next.regions.join() !== filters.regions.join()) {
-      load(what, where, next.km ?? profile?.mobilityKm, next.contracts, next.regions);
-    }
+    if (searchKey(next) !== searchKey(filters)) load(what, where, next, profile?.mobilityKm);
   }
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    load(what, where, filters.km ?? profile?.mobilityKm, filters.contracts, filters.regions);
+    load(what, where, filters, profile?.mobilityKm);
   }
 
   function openPrep(offer: Offer) {
@@ -168,7 +155,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           <button className="btn dark" type="submit">{o.search}</button>
         </form>
 
-        <FilterPanel t={t} filters={filters} count={ranked.length} cities={cities} onChange={changeFilters} />
+        <FilterPanel t={t} filters={filters} count={ranked.length} onChange={changeFilters} />
 
         {demo && <p className="banner">{o.demo}</p>}
         {profile === null && (

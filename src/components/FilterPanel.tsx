@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { cityLabel } from "@/lib/belgium";
+import communes from "@/lib/communes.json";
 import {
-  activeCount, CONTRACT_CHOICES, DAY_CHOICES, HOUR_CHOICES, KM_CHOICES, LANG_CHOICES, NO_FILTERS, REGION_CHOICES, type Filters,
+  activeCount, CONTRACT_CHOICES, DAY_CHOICES, HOUR_CHOICES, KM_CHOICES, LANG_CHOICES, NO_FILTERS, PROVINCE_CHOICES, REGION_CHOICES, type AreaChoice, type Filters,
 } from "@/lib/filters";
 import type { Dict } from "@/lib/i18n";
 
@@ -10,16 +12,21 @@ interface Props {
   t: Dict;
   filters: Filters;
   count: number;
-  /** Communes présentes dans les offres, les plus fréquentes d'abord. */
-  cities: string[];
   onChange: (f: Filters) => void;
 }
 
 const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
-export default function FilterPanel({ t, filters: f, count, cities, onChange }: Props) {
+export default function FilterPanel({ t, filters: f, count, onChange }: Props) {
   const l = t.filters;
   const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const areaLabel = (a: AreaChoice) => (a === "germanophone" ? l.germanophone : t.regions[a]);
+  const addCity = (c: string) => {
+    const name = cityLabel(c.trim(), "fr");
+    if (name && !f.cities.includes(name)) onChange({ ...f, cities: [...f.cities, name].slice(0, 5), allBelgium: false, provinces: [] });
+    setTyped("");
+  };
   const n = activeCount(f);
   const set = (patch: Partial<Filters>) => onChange({ ...f, ...patch });
 
@@ -30,8 +37,10 @@ export default function FilterPanel({ t, filters: f, count, cities, onChange }: 
   /** Pastilles des filtres actifs, retirables en un clic. */
   const pills: [string, () => void][] = [
     ...f.contracts.map((c): [string, () => void] => [t.contracts[c], () => set({ contracts: toggle(f.contracts, c) })]),
-    ...f.regions.map((r): [string, () => void] => [t.regions[r], () => set({ regions: toggle(f.regions, r) })]),
-    ...(f.city.trim() ? [[f.city.trim(), () => set({ city: "" })] as [string, () => void]] : []),
+    ...(f.allBelgium ? [[l.allBelgium, () => set({ allBelgium: false })] as [string, () => void]] : []),
+    ...f.regions.map((r): [string, () => void] => [areaLabel(r), () => set({ regions: toggle(f.regions, r) })]),
+    ...f.provinces.map((p): [string, () => void] => [l.provinces[p], () => set({ provinces: toggle(f.provinces, p) })]),
+    ...f.cities.map((c): [string, () => void] => [c, () => set({ cities: toggle(f.cities, c) })]),
     ...f.hours.map((h): [string, () => void] => [l.hours[h], () => set({ hours: toggle(f.hours, h) })]),
     ...(f.lang ? [[l.langs[f.lang], () => set({ lang: null })] as [string, () => void]] : []),
     ...(f.days ? [[l.daysLabel.replace("{n}", String(f.days)), () => set({ days: null })] as [string, () => void]] : []),
@@ -66,12 +75,33 @@ export default function FilterPanel({ t, filters: f, count, cities, onChange }: 
           </div>
           <div>
             <p className="label">{l.region}</p>
-            <div className="chips">{REGION_CHOICES.map((r) => chip(f.regions.includes(r), t.regions[r], () => set({ regions: toggle(f.regions, r) })))}</div>
+            <div className="chips">
+              {chip(f.allBelgium, l.allBelgium, () => set({ allBelgium: !f.allBelgium, cities: [], provinces: [] }))}
+              {REGION_CHOICES.map((r) => chip(f.regions.includes(r), areaLabel(r), () => set({ regions: toggle(f.regions, r) })))}
+            </div>
           </div>
-          <label>{l.city}
-            <input list="filter-cities" value={f.city} placeholder={l.cityHint} onChange={(e) => set({ city: e.target.value })} />
-            <datalist id="filter-cities">{cities.map((c) => <option key={c} value={c} />)}</datalist>
-          </label>
+          <div>
+            <p className="label">{l.province}</p>
+            <div className="chips">{PROVINCE_CHOICES.map((p) => chip(f.provinces.includes(p), l.provinces[p], () => set({ provinces: toggle(f.provinces, p), cities: [], allBelgium: false })))}</div>
+          </div>
+          <div>
+            <label>{l.city}
+              <input
+                list="filter-cities"
+                value={typed}
+                placeholder={l.cityHint}
+                onChange={(e) => (communes.includes(e.target.value) ? addCity(e.target.value) : setTyped(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCity(typed);
+                  }
+                }}
+              />
+              <datalist id="filter-cities">{communes.map((c) => <option key={c} value={c} />)}</datalist>
+            </label>
+            <p className="muted small" style={{ margin: "6px 0 0" }}>{l.cityNote}</p>
+          </div>
           <div>
             <p className="label">{l.language}</p>
             <div className="chips">{LANG_CHOICES.map((x) => chip(f.lang === x, l.langs[x], () => set({ lang: f.lang === x ? null : x })))}</div>

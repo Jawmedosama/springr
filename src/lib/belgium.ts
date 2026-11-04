@@ -1,4 +1,4 @@
-import type { Region } from "./types";
+import type { Province, Region } from "./types";
 
 /**
  * Les codes postaux belges vont de 1000 à 9992.
@@ -77,4 +77,44 @@ const PLACES_FR_NL = Object.fromEntries(Object.entries(PLACES_NL_FR).map(([nl, f
 export function cityLabel(city: string, lang: "fr" | "nl"): string {
   const name = city.split(",")[0].trim();
   return (lang === "fr" ? PLACES_NL_FR[name] : PLACES_FR_NL[name]) ?? name;
+}
+
+/** Province d'après le code postal. Bruxelles n'appartient à aucune province. */
+export function provinceFromPostcode(postcode?: string): Province | undefined {
+  const n = Number(postcode);
+  if (!n || n < 1300) return undefined;
+  if (n < 1500) return "brabant-wallon";
+  if (n < 2000) return "brabant-flamand";
+  if (n < 3000) return "anvers";
+  if (n < 3500) return "brabant-flamand";
+  if (n < 4000) return "limbourg";
+  if (n < 5000) return "liege";
+  if (n < 6000) return "namur";
+  if (n < 6600) return "hainaut";
+  if (n < 7000) return "luxembourg";
+  if (n < 8000) return "hainaut";
+  if (n < 9000) return "flandre-occidentale";
+  return "flandre-orientale";
+}
+
+const PROVINCE_WORDS: [Province, RegExp][] = [
+  ["brabant-wallon", /waals[- ]brabant|brabant wallon|nijvel|nivelles|waver|wavre/i],
+  ["brabant-flamand", /vlaams[- ]brabant|brabant flamand|halle-vilvoorde|leuven/i],
+  ["flandre-occidentale", /west-vlaanderen|flandre occidentale|brugge|kortrijk|oostende|ieper|roeselare/i],
+  ["flandre-orientale", /oost-vlaanderen|flandre orientale|\bgent\b|aalst|dendermonde|sint-niklaas/i],
+  ["anvers", /antwerpen|anvers|turnhout|mechelen/i],
+  ["limbourg", /\blimburg\b|limbourg|hasselt|tongeren|maaseik/i],
+  ["liege", /\bluik\b|liège|liege|verviers|hoei|\bhuy\b|borgworm|waremme/i],
+  ["namur", /\bnamen\b|namur|dinant|philippeville/i],
+  ["hainaut", /henegouwen|hainaut|charleroi|\bbergen\b|\bmons\b|doornik|tournai|moeskroen|\baat\b|thuin|zinnik/i],
+  ["luxembourg", /luxemburg|luxembourg|aarlen|arlon|bastenaken|neufch[aâ]teau|marche-en-famenne|virton/i],
+];
+
+export function provinceFromPlace(place: string): Province | undefined {
+  return PROVINCE_WORDS.find(([, re]) => re.test(place))?.[0];
+}
+
+/** Communes de la Communauté germanophone (codes postaux 47xx). */
+export function isGermanSpeaking(o: { postcode?: string; city: string }): boolean {
+  return /^47[0-9]{2}$/.test(o.postcode ?? "") || /eupen|kelmis|lontzen|raeren|amel|büllingen|bullingen|burg-reuland|bütgenbach|butgenbach|sankt vith|saint-vith/i.test(o.city);
 }

@@ -1,5 +1,5 @@
-import type { ContractType, Offer, Region } from "../types";
-import { cityLabel, regionFromPlace, regionFromPostcode } from "../belgium";
+import type { ContractType, Offer, Province, Region } from "../types";
+import { cityLabel, provinceFromPostcode, regionFromPlace, regionFromPostcode } from "../belgium";
 
 /**
  * Offres du Forem publiées en open data sur le portail ODWB, mises à jour chaque jour.
@@ -17,6 +17,19 @@ const REGION_LABELS: Record<Region, string> = {
   bruxelles: "RÉGION DE BRUXELLES-CAPITALE",
   wallonie: "RÉGION WALLONNE",
   flandre: "RÉGION FLAMANDE",
+};
+
+const PROVINCE_LABELS: Record<Province, string> = {
+  anvers: "Province d'Anvers",
+  "brabant-flamand": "Province du Brabant Flamand",
+  "brabant-wallon": "Province du Brabant Wallon",
+  "flandre-occidentale": "Province de Flandre Occidentale",
+  "flandre-orientale": "Province de Flandre Orientale",
+  hainaut: "Province du Hainaut",
+  liege: "Province de Liège",
+  limbourg: "Province du Limbourg",
+  luxembourg: "Province du Luxembourg",
+  namur: "Province de Namur",
 };
 
 interface Rec {
@@ -87,6 +100,7 @@ function toOffer(r: Rec): Offer {
     city: titleCase(r.lieuxtravaillocalite?.[0] ?? ""),
     postcode,
     region: region ?? undefined,
+    province: provinceFromPostcode(postcode),
     contract,
     description: describe(r),
     url: r.url ?? "https://www.leforem.be",
@@ -131,6 +145,7 @@ export interface ForemQuery {
   where?: string;
   km?: number;
   region?: Region;
+  province?: Province;
 }
 
 export async function fetchForem(q: ForemQuery = {}): Promise<Offer[]> {
@@ -141,6 +156,7 @@ export async function fetchForem(q: ForemQuery = {}): Promise<Offer[]> {
   // Si un contrat demandé n'existe pas ici (stage, alternance), on ne restreint pas : le filtre se fait ensuite sur le titre.
   if (wanted.length && wanted.length === q.contracts?.length) filters.push(`(${wanted.map((v) => `typecontrat=${quote(v)}`).join(" or ")})`);
   if (q.region) filters.push(`lieuxtravailregion=${quote(REGION_LABELS[q.region])}`);
+  if (q.province) filters.push(`lieuxtravailregion=${quote(PROVINCE_LABELS[q.province])}`);
   if (q.where) {
     const point = await locate(q.where);
     filters.push(

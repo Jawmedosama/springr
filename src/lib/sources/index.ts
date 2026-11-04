@@ -1,5 +1,5 @@
 import { cityLabel } from "../belgium";
-import type { ContractType, Offer, Region } from "../types";
+import type { ContractType, Offer, Province, Region } from "../types";
 import { fetchAdzuna } from "./adzuna";
 import { fetchCareerjet, fetchJooble } from "./aggregators";
 import { fetchCareers } from "./careers";
@@ -55,7 +55,21 @@ export interface OfferQuery {
   contracts?: ContractType[];
   /** Région entière, quand aucune ville n'est choisie. */
   region?: Region;
+  provinces?: Province[];
 }
+
+const ADZUNA_PROVINCES: Record<Province, string> = {
+  anvers: "Antwerpen",
+  "brabant-flamand": "Vlaams-Brabant",
+  "brabant-wallon": "Waals-Brabant",
+  "flandre-occidentale": "West-Vlaanderen",
+  "flandre-orientale": "Oost-Vlaanderen",
+  hainaut: "Henegouwen",
+  liege: "Luik",
+  limbourg: "Limburg",
+  luxembourg: "Luxemburg",
+  namur: "Namen",
+};
 
 export interface OffersResult {
   offers: Offer[];
@@ -74,9 +88,31 @@ function finish(results: PromiseSettledResult<Offer[]>[]): OffersResult {
 
 export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   const what = q.what?.trim() ?? "";
-  const where = q.where?.trim() ?? "";
+  const places = (q.where ?? "").split(",").map((c) => c.trim()).filter(Boolean).slice(0, 5);
   const km = Math.min(200, Math.max(5, q.km ?? 30));
-  const calls: Promise<Offer[]>[] = [fetchForem({ what, where, km, contracts: q.contracts, region: q.region }), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
+  const contracts = q.contracts;
+
+  // Plusieurs provinces : une recherche par province.
+  if (q.provinces?.length) {
+    const calls = q.provinces.slice(0, 5).flatMap((province) => [
+      fetchForem({ what, contracts, province }),
+      fetchAdzuna(what, 1, ADZUNA_PROVINCES[province], 30),
+    ]);
+    return finish(await Promise.allSettled([...calls, fetchCareers({ what })]));
+  }
+
+  // Plusieurs villes : une recherche par ville, avec le même rayon.
+  if (places.length > 1) {
+    const calls = places.flatMap((where) => [
+      fetchForem({ what, where, km, contracts }),
+      fetchAdzuna(what, 1, where, km),
+      fetchCareers({ what, where }),
+    ]);
+    return finish(await Promise.allSettled(calls));
+  }
+
+  const where = places[0] ?? "";
+  const calls: Promise<Offer[]>[] = [fetchForem({ what, where, km, contracts, region: q.region }), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
   calls.push(fetchCareers({ what, where, region: q.region }), fetchJooble(what, where, km), fetchCareerjet(what, where));

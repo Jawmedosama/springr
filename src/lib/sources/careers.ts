@@ -1,4 +1,4 @@
-import { regionFromPlace } from "../belgium";
+import { provinceFromPlace, regionFromPlace } from "../belgium";
 import type { ContractType, Offer, Region } from "../types";
 
 /**
@@ -121,6 +121,7 @@ export async function fetchCareers(q: CareersQuery = {}): Promise<Offer[]> {
           company: b.name,
           city: j.place.split(",")[0].trim() || "Belgique",
           region: regionFromPlace(j.place),
+          province: provinceFromPlace(j.place),
           contract: contract(j),
           description: `Offre publiée sur la page carrières de ${b.name}.`,
           url: j.url,

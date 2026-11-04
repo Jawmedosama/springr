@@ -2,6 +2,10 @@ export type Lang = "fr" | "nl";
 
 export type Region = "bruxelles" | "wallonie" | "flandre";
 
+export type Province =
+  | "anvers" | "brabant-flamand" | "brabant-wallon" | "flandre-occidentale" | "flandre-orientale"
+  | "hainaut" | "liege" | "limbourg" | "luxembourg" | "namur";
+
 export type ContractType =
   | "etudiant"
   | "flexi"
@@ -20,6 +24,7 @@ export interface Offer {
   city: string;
   postcode?: string;
   region?: Region;
+  province?: Province;
   contract: ContractType;
   description: string;
   language?: Lang | "de" | "en";
