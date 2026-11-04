@@ -1,21 +1,22 @@
 import type { Offer, Profile } from "./types";
 
 const FOR_BEGINNERS =
-  /(débutant|debutant|sans expérience|sans experience|pas d'expérience|première expérience|premier emploi|junior|starter|geen ervaring|zonder ervaring|beginner|étudiant|etudiant|student|temps partiel|deeltijds|mi-temps|flexi|polyvalent|formation assurée|opleiding voorzien)/i;
-const SENIOR_TITLE =
-  /\b(senior|manager|lead|directeur|directrice|director|head of|expert\w*|ingénieur\w*|engineer|architect\w*|chef de|responsable|consultant\w*|analyst\w*|médecin|avocat\w*|pharmacien\w*)\b/i;
-const NEEDS_DEGREE = /(bachelier|master|diplôme requis|diplômé|gediplomeerd|\bans d'expérience|jaar ervaring|years of experience)/i;
+  /(débutant|debutant|sans expérience|sans experience|pas d'expérience|première expérience|premier emploi|junior|starter|geen ervaring|zonder ervaring|beginner|étudiant|etudiant|student|flexi|polyvalent|formation assurée|opleiding voorzien)/i;
+/** Métiers qui recrutent souvent sans diplôme particulier. */
+const ENTRY_JOBS =
+  /(vendeu|verkoper|verkoopster|caissi|kassier|magasinier|magazijn|manutention|serveu|plongeu|commis|nettoyage|schoonmaak|livreu|chauffeur-livreur|accueil|réassort|équipier|equipier|préparateur de commandes|orderpicker|logistiek medewerker|aide-)/i;
+/** Titres qui demandent de l'expérience, un diplôme ou un titre protégé. */
+const NOT_ENTRY =
+  /\b(senior|expérimenté\w*|ervaren|manager|lead|directeur|directrice|director|head of|expert\w*|ingénieur\w*|engineer|architect\w*|chef|responsable|consultant\w*|analyst\w*|médecin|arts|avocat\w*|pharmacien\w*|infirmi\w*|verpleeg\w*|sage-femme|kin[eé]\w*|psycho\w*|comptable|boekhoud\w*|technicien\w*|électricien\w*|electricien\w*|mécanicien\w*)\b/i;
 
+/** Estimation par mots-clés : les annonces n'indiquent presque jamais le niveau requis. */
 export function isAccessible(o: Offer): boolean {
-  if (SENIOR_TITLE.test(o.title)) return false;
-  if (["etudiant", "stage", "alternance"].includes(o.contract)) return true;
-  return FOR_BEGINNERS.test(`${o.title} ${o.description}`) || !NEEDS_DEGREE.test(o.description);
+  if (NOT_ENTRY.test(o.title) && !/\b(junior|étudiant|etudiant|student)\b/i.test(o.title)) return false;
+  return ["etudiant", "stage", "alternance"].includes(o.contract) || FOR_BEGINNERS.test(`${o.title} ${o.description}`) || ENTRY_JOBS.test(o.title);
 }
 
-/** Vrai quand l'annonce dit clairement qu'elle s'adresse aux débutants. */
-export function welcomesBeginners(o: Offer): boolean {
-  return !SENIOR_TITLE.test(o.title) && (o.contract === "etudiant" || FOR_BEGINNERS.test(`${o.title} ${o.description}`));
-}
+/** Vrai quand l'annonce s'adresse clairement aux débutants. */
+export const welcomesBeginners = isAccessible;
 
 export function hasLittleExperience(p: Profile): boolean {
   return (p.cvText ?? "").length < 400;
