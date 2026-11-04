@@ -112,7 +112,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
           <p className="step-label" style={{ marginTop: 8 }}>{step + 1} / 4 · {s.steps[step]}</p>
         </div>
 
-        {step === 0 && <CvImport t={t} onResult={fromCv} />}
+        {(step === 0 || (step === 3 && !f.cvText)) && <CvImport t={t} onResult={fromCv} />}
 
         {step === 0 && (
           <section className="panel">
