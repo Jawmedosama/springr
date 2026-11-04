@@ -108,14 +108,14 @@ export default function SignupForm({ lang }: { lang: Lang }) {
           <p>{s.intro}</p>
         </div>
 
+        {step === 0 && <CvImport t={t} hasCv={Boolean(f.cvText)} onResult={fromCv} />}
+
         <div>
           <div className="progress" aria-hidden>
             {s.steps.map((_, i) => <span key={i} className={i <= step ? "on" : ""} />)}
           </div>
           <p className="step-label" style={{ marginTop: 8 }}>{step + 1} / 3 · {s.steps[step]}</p>
         </div>
-
-        {step === 0 && <CvImport t={t} hasCv={Boolean(f.cvText)} onResult={fromCv} />}
 
         {step === 0 && (
           <section className="panel">
