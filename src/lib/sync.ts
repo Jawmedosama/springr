@@ -111,19 +111,23 @@ const fromAppRow = (r: AppRow): Application => ({
 let userId: string | null = null;
 const timers: Partial<Record<"profile" | "apps" | "seen", ReturnType<typeof setTimeout>>> = {};
 
+function report(what: string, error: { message: string } | null | undefined) {
+  if (error) console.error(`Synchronisation ${what} : ${error.message}`);
+}
+
 async function pushProfile(id: string) {
   const p = store.getProfile();
-  if (p) await getSupabase()?.from("profiles").upsert(toProfileRow(p, id));
+  if (p) report("profil", (await getSupabase()?.from("profiles").upsert(toProfileRow(p, id)))?.error);
 }
 
 async function pushApps(id: string) {
   const rows = store.getApps().map((a) => toAppRow(a, id));
-  if (rows.length) await getSupabase()?.from("applications").upsert(rows);
+  if (rows.length) report("candidatures", (await getSupabase()?.from("applications").upsert(rows))?.error);
 }
 
 async function pushSeen(id: string) {
   const rows = [...store.getSeen()].map((offer_id) => ({ user_id: id, offer_id }));
-  if (rows.length) await getSupabase()?.from("seen_offers").upsert(rows, { ignoreDuplicates: true });
+  if (rows.length) report("offres vues", (await getSupabase()?.from("seen_offers").upsert(rows, { ignoreDuplicates: true }))?.error);
 }
 
 /** Le profil d'abord : les candidatures et les offres vues y sont rattachées. */
@@ -137,16 +141,17 @@ function onChange(change: StoreChange) {
   const id = userId;
   if (!sb || !id) return;
   if (change.kind === "appRemoved") {
-    void sb.from("applications").delete().match({ user_id: id, offer_id: change.id });
+    // Une requête Supabase ne part que lorsqu'on attend son résultat.
+    sb.from("applications").delete().match({ user_id: id, offer_id: change.id }).then(({ error }) => report("suppression", error));
     return;
   }
   if (change.kind === "seenReset") {
-    void sb.from("seen_offers").delete().eq("user_id", id);
+    sb.from("seen_offers").delete().eq("user_id", id).then(({ error }) => report("offres vues", error));
     return;
   }
   const push = { profile: pushAll, apps: pushApps, seen: pushSeen }[change.kind];
   clearTimeout(timers[change.kind]);
-  timers[change.kind] = setTimeout(() => void push(id), 800);
+  timers[change.kind] = setTimeout(() => void push(id), 300);
 }
 
 /**
