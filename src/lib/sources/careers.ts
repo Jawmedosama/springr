@@ -19,6 +19,16 @@ const BOARDS: { ats: "greenhouse" | "lever" | "recruitee" | "smartrecruiters"; s
   { ats: "greenhouse", slug: "stripe", name: "Stripe" },
   { ats: "greenhouse", slug: "airbnb", name: "Airbnb" },
   { ats: "lever", slug: "kpler", name: "Kpler" },
+  { ats: "smartrecruiters", slug: "Coolblue", name: "Coolblue" },
+  { ats: "smartrecruiters", slug: "Accor", name: "Accor" },
+  { ats: "recruitee", slug: "nrb", name: "NRB" },
+  { ats: "recruitee", slug: "axi", name: "Axi" },
+  { ats: "recruitee", slug: "dataroots", name: "dataroots" },
+  { ats: "recruitee", slug: "jost", name: "Jost Group" },
+  { ats: "recruitee", slug: "xylos", name: "Xylos" },
+  { ats: "greenhouse", slug: "elastic", name: "Elastic" },
+  { ats: "greenhouse", slug: "hellofresh", name: "HelloFresh" },
+  { ats: "greenhouse", slug: "databricks", name: "Databricks" },
 ];
 
 const IN_BELGIUM = /belgi|belgique|belgië/i;

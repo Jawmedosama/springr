@@ -87,6 +87,13 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
       : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
   }, [offers, agencies, filters, profile, seen, lang]);
 
+  /** Offres retirées par « français seulement », pour voir ce que ce filtre coûte. */
+  const hiddenByFrench = useMemo(() => {
+    if (filters.lang !== "fr" || !offers) return 0;
+    const others = { ...filters, lang: null };
+    return [...offers, ...agencies].filter((x) => !seen.has(x.id) && matchesFilters(x, others)).length - ranked.length;
+  }, [filters, offers, agencies, seen, ranked.length]);
+
   const current = ranked[0];
 
   const decide = useCallback(
@@ -177,7 +184,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           <button className="btn dark" type="submit">{o.search}</button>
         </form>
 
-        <FilterPanel t={t} filters={filters} count={ranked.length} onChange={changeFilters} />
+        <FilterPanel t={t} filters={filters} count={ranked.length} hiddenByFrench={hiddenByFrench} onChange={changeFilters} />
 
         {demo && <p className="banner">{o.demo}</p>}
         {profile === null && (

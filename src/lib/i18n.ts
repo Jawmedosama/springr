@@ -288,6 +288,7 @@ const fr = {
   filters: {
     title: "Filtres",
     matching: "offres correspondent",
+    hiddenFr: "{n} masquées par « français seulement »",
     reset: "Tout effacer",
     remove: "Retirer",
     contract: "Type de contrat",
@@ -657,6 +658,7 @@ const nl: Dict = {
   filters: {
     title: "Filters",
     matching: "vacatures komen overeen",
+    hiddenFr: "{n} verborgen door « enkel Frans »",
     reset: "Alles wissen",
     remove: "Verwijderen",
     contract: "Type contract",

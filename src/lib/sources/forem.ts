@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { ContractType, Offer, Province, Region } from "../types";
 import { cityLabel, provinceFromPostcode, regionFromPlace, regionFromPostcode } from "../belgium";
 
@@ -33,6 +35,8 @@ const PROVINCE_LABELS: Record<Province, string> = {
 };
 
 interface Rec {
+  lieuxtravailgeo?: { lon: number; lat: number }[] | null;
+  datefindiffusion?: string;
   numerooffreforem?: string;
   titreoffre?: string;
   lieuxtravaillocalite?: string[] | null;
@@ -150,7 +154,70 @@ export interface ForemQuery {
   page?: number;
 }
 
+const plain = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+let snapshot: Rec[] | null | undefined;
+
+/** Copie du jour, téléchargée au build (scripts/snapshot-forem.mjs). */
+function loadSnapshot(): Rec[] | null {
+  if (snapshot === undefined) {
+    try {
+      snapshot = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/forem.json"), "utf8")) as Rec[];
+    } catch {
+      snapshot = null;
+    }
+  }
+  return snapshot;
+}
+
+function kmBetween(a: { lon: number; lat: number }, b: { lon: number; lat: number }): number {
+  const rad = Math.PI / 180;
+  const x = (b.lon - a.lon) * rad * Math.cos(((a.lat + b.lat) / 2) * rad);
+  return Math.hypot(x, (b.lat - a.lat) * rad) * 6371;
+}
+
+const isAgency = (r: Rec) => Boolean(r.secteurscodenace?.includes(AGENCY_SECTOR)) || (r.typecontrat ?? "").startsWith("Intérimaire");
+
+/** Cherche dans la copie du jour : aucune limite d'appels, et toutes les offres sont accessibles. */
+function searchSnapshot(records: Rec[], q: ForemQuery): Offer[] {
+  const today = new Date().toISOString().slice(0, 10);
+  const words = plain(q.what ?? "").split(/\s+/).filter(Boolean);
+  const wanted = (q.contracts ?? []).map((c) => CONTRACT_VALUES[c]).filter((v): v is string => Boolean(v));
+  const byContract = wanted.length > 0 && wanted.length === q.contracts?.length;
+  const city = q.where ? plain(cityLabel(q.where, "fr")) : "";
+  const center = city
+    ? records.find((r) => r.lieuxtravailgeo?.length && r.lieuxtravaillocalite?.some((l) => plain(l) === city))?.lieuxtravailgeo?.[0]
+    : undefined;
+  const km = q.km ?? 30;
+  const region = q.region && REGION_LABELS[q.region];
+  const province = q.province && PROVINCE_LABELS[q.province];
+  const found = records.filter((r) => {
+    if ((r.datefindiffusion ?? today) < today) return false;
+    if (region && !r.lieuxtravailregion?.includes(region)) return false;
+    if (province && !r.lieuxtravailregion?.includes(province)) return false;
+    if (byContract && !wanted.some((w) => plain(w) === plain(r.typecontrat ?? ""))) return false;
+    if (city) {
+      const near = center
+        ? r.lieuxtravailgeo?.some((g) => kmBetween(center, g) <= km)
+        : r.lieuxtravaillocalite?.some((l) => plain(l).includes(city));
+      if (!near) return false;
+    }
+    if (words.length) {
+      const text = plain(`${r.titreoffre} ${r.metier ?? ""} ${(r.secteurs ?? []).join(" ")} ${r.nomemployeur ?? ""}`);
+      if (!words.every((w) => text.includes(w))) return false;
+    }
+    return true;
+  });
+  const page = q.page ?? 0;
+  return [
+    ...found.filter((r) => !isAgency(r)).slice(page * 200, page * 200 + 200),
+    ...found.filter(isAgency).slice(page * 100, page * 100 + 100),
+  ].map(toOffer);
+}
+
 export async function fetchForem(q: ForemQuery = {}): Promise<Offer[]> {
+  const records = loadSnapshot();
+  if (records) return searchSnapshot(records, q);
   const today = new Date().toISOString().slice(0, 10);
   const filters = [`lieuxtravailregion="Belgique"`, `datefindiffusion >= date'${today}'`];
   if (q.what) filters.push(quote(q.what));

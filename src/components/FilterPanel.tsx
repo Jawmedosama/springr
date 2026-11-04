@@ -12,12 +12,13 @@ interface Props {
   t: Dict;
   filters: Filters;
   count: number;
+  hiddenByFrench: number;
   onChange: (f: Filters) => void;
 }
 
 const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
-export default function FilterPanel({ t, filters: f, count, onChange }: Props) {
+export default function FilterPanel({ t, filters: f, count, hiddenByFrench, onChange }: Props) {
   const l = t.filters;
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
@@ -55,7 +56,10 @@ export default function FilterPanel({ t, filters: f, count, onChange }: Props) {
         <button type="button" className="btn small" aria-expanded={open} onClick={() => setOpen(!open)}>
           {l.title}{n > 0 ? ` (${n})` : ""}
         </button>
-        <span className="muted small">{count} {l.matching}</span>
+        <span className="muted small">
+          {count} {l.matching}
+          {hiddenByFrench > 0 ? ` · ${l.hiddenFr.replace("{n}", String(hiddenByFrench))}` : ""}
+        </span>
         {n > 0 && <button type="button" className="link-btn small" onClick={() => onChange(NO_FILTERS)}>{l.reset}</button>}
       </div>
 
