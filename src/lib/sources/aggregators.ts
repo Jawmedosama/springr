@@ -7,6 +7,7 @@ import type { ContractType, Offer } from "../types";
  */
 function guess(text: string): ContractType {
   const t = text.toLowerCase();
+  if (/\bflexi[- ]?job/.test(t)) return "flexi";
   if (/(étudiant|etudiant|student)/.test(t)) return "etudiant";
   if (/\b(stage|stagiair\w*)\b/.test(t)) return "stage";
   if (/\b(cdd|tijdelijk)\b/.test(t)) return "cdd";

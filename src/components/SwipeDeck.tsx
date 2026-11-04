@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { isAccessible } from "@/lib/accessible";
 import { cityLabel } from "@/lib/belgium";
+import { activeCount, loadFilters, matchesFilters, NO_FILTERS, saveFilters, type Filters } from "@/lib/filters";
 import { getDict } from "@/lib/i18n";
 import { matchOffer, type MatchResult } from "@/lib/match";
 import { store } from "@/lib/store";
-import type { ContractType, Lang, Offer, Profile } from "@/lib/types";
+import type { Lang, Offer, Profile } from "@/lib/types";
+import FilterPanel from "./FilterPanel";
 import OfferCard, { MatchRing } from "./OfferCard";
 import PrepSheet from "./PrepSheet";
 import SearchElsewhere from "./SearchElsewhere";
 import { IconHeart, IconInfo, IconPen, IconX } from "./Icons";
 
-const CONTRACTS: ContractType[] = ["etudiant", "stage", "alternance", "cdd", "cdi"];
 const THRESHOLD = 110;
 
 interface Ranked {
@@ -28,12 +28,10 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [offers, setOffers] = useState<Offer[] | null>(null);
   const [demo, setDemo] = useState(false);
   const [agencies, setAgencies] = useState<Offer[]>([]);
-  const [showAgencies, setShowAgencies] = useState(true);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const [what, setWhat] = useState("");
   const [where, setWhere] = useState("");
-  const [contract, setContract] = useState<ContractType | "all">("all");
-  const [easyOnly, setEasyOnly] = useState(false);
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [drag, setDrag] = useState(0);
   const [leaving, setLeaving] = useState<0 | 1 | -1>(0);
   const [detail, setDetail] = useState<Ranked | null>(null);
@@ -65,15 +63,16 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     const c = p?.city ?? "";
     setWhat(w);
     setWhere(c);
-    load(w, c, p?.mobilityKm);
+    const f = loadFilters();
+    setFilters(f);
+    load(w, c, f.km ?? p?.mobilityKm);
   }, [load]);
 
   const ranked: Ranked[] = useMemo(() => {
     if (!offers) return [];
-    const list = (showAgencies ? [...offers, ...agencies] : offers)
+    const list = [...offers, ...agencies]
       .filter((x) => !seen.has(x.id))
-      .filter((x) => contract === "all" || x.contract === contract)
-      .filter((x) => !easyOnly || isAccessible(x))
+      .filter((x) => matchesFilters(x, filters))
       .map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null }));
     return profile
       ? list.sort(
@@ -83,7 +82,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
             b.offer.publishedAt.localeCompare(a.offer.publishedAt),
         )
       : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
-  }, [offers, agencies, showAgencies, easyOnly, profile, seen, lang, contract]);
+  }, [offers, agencies, filters, profile, seen, lang]);
 
   const current = ranked[0];
 
@@ -116,9 +115,15 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [decide, detail, prep]);
 
+  function changeFilters(next: Filters) {
+    setFilters(next);
+    saveFilters(next);
+    if (next.km !== filters.km) load(what, where, next.km ?? profile?.mobilityKm);
+  }
+
   function search(e: React.FormEvent) {
     e.preventDefault();
-    load(what, where, profile?.mobilityKm);
+    load(what, where, filters.km ?? profile?.mobilityKm);
   }
 
   function openPrep(offer: Offer) {
@@ -150,13 +155,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           <button className="btn dark" type="submit">{o.search}</button>
         </form>
 
-        <div className="filters">
-          <button className={easyOnly ? "chip on" : "chip"} onClick={() => setEasyOnly(!easyOnly)}>{o.easy}</button>
-          <button className={contract === "all" ? "chip on" : "chip"} onClick={() => setContract("all")}>{o.all}</button>
-          {CONTRACTS.map((c) => (
-            <button key={c} className={contract === c ? "chip on" : "chip"} onClick={() => setContract(c)}>{t.contracts[c]}</button>
-          ))}
-        </div>
+        <FilterPanel t={t} filters={filters} count={ranked.length} onChange={changeFilters} />
 
         {demo && <p className="banner">{o.demo}</p>}
         {profile === null && (
@@ -167,7 +166,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           <div className="stack"><div className="skeleton" style={{ position: "absolute", inset: 0 }} aria-label={o.loading} /></div>
         ) : !current ? (
           <div className="empty">
-            <p style={{ margin: 0 }}>{o.empty}</p>
+            <p style={{ margin: 0 }}>{activeCount(filters) > 0 ? t.filters.none : o.empty}</p>
             {seen.size > 0 && (
               <button className="btn" onClick={() => { store.resetSeen(); setSeen(new Set()); }}>{o.reset}</button>
             )}
@@ -233,11 +232,6 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
             <div className="deck-meta">
               <span>{ranked.length} {o.left}</span>
               <Link className="chip" href={`/${lang}/rafale`} style={{ textDecoration: "none" }}>{t.burst.title} →</Link>
-              {agencies.length > 0 && (
-                <button className="chip" onClick={() => setShowAgencies(!showAgencies)}>
-                  {showAgencies ? o.hideAgencies : `${o.showAgencies} (${agencies.length})`}
-                </button>
-              )}
             </div>
           </>
         )}

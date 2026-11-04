@@ -19,6 +19,7 @@ interface AdzunaJob {
 function guessContract(job: AdzunaJob): ContractType {
   const title = job.title.toLowerCase();
   const text = `${title} ${job.description.toLowerCase()}`;
+  if (/\bflexi[- ]?job/.test(text)) return "flexi";
   if (/(étudiant|etudiant|student|jobiste)/.test(title) || /(job étudiant|job etudiant|studentenjob|jobstudent|\b(un|une|des) étudiant)/.test(text)) return "etudiant";
   if (/\b(stage|stagiair\w*|internship|intern)\b/.test(title)) return "stage";
   if (/\b(alternance|duaal|apprenti\w*)\b/.test(title)) return "alternance";

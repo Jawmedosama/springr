@@ -9,7 +9,7 @@ import { store } from "@/lib/store";
 import type { ContractType, Lang, Profile } from "@/lib/types";
 import CvImport from "./CvImport";
 
-const CONTRACTS: ContractType[] = ["etudiant", "stage", "alternance", "cdd", "cdi"];
+const CONTRACTS: ContractType[] = ["etudiant", "flexi", "stage", "alternance", "cdd", "cdi"];
 const LANG_INDEX: Record<string, number> = { fr: 0, nl: 1, de: 2, en: 3 };
 
 export default function SignupForm({ lang }: { lang: Lang }) {

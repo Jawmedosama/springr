@@ -4,6 +4,7 @@ export type Region = "bruxelles" | "wallonie" | "flandre";
 
 export type ContractType =
   | "etudiant"
+  | "flexi"
   | "stage"
   | "alternance"
   | "cdd"

@@ -12,7 +12,7 @@ const NOT_ENTRY =
 /** Estimation par mots-clés : les annonces n'indiquent presque jamais le niveau requis. */
 export function isAccessible(o: Offer): boolean {
   if (NOT_ENTRY.test(o.title) && !/\b(junior|étudiant|etudiant|student)\b/i.test(o.title)) return false;
-  return ["etudiant", "stage", "alternance"].includes(o.contract) || FOR_BEGINNERS.test(`${o.title} ${o.description}`) || ENTRY_JOBS.test(o.title);
+  return ["etudiant", "flexi", "stage", "alternance"].includes(o.contract) || FOR_BEGINNERS.test(`${o.title} ${o.description}`) || ENTRY_JOBS.test(o.title);
 }
 
 /** Vrai quand l'annonce s'adresse clairement aux débutants. */

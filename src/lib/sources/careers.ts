@@ -93,6 +93,7 @@ const READERS = { greenhouse, lever, recruitee, smartrecruiters };
 
 function contract(r: Raw): ContractType {
   const t = `${r.title} ${r.commitment ?? ""}`.toLowerCase();
+  if (/\bflexi[- ]?job/.test(t)) return "flexi";
   if (/\b(student|étudiant|etudiant|jobiste)/.test(t)) return "etudiant";
   if (/\b(stage|stagiair\w*|intern|internship)\b/.test(t)) return "stage";
   if (/\b(temporary|fixed[- ]term|cdd|tijdelijk)\b/.test(t)) return "cdd";

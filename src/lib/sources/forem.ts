@@ -43,7 +43,8 @@ function mapContract(raw: string, title: string): ContractType {
   const t = title.toLowerCase();
   if (/\b(alternance|apprenti\w*)\b/.test(t)) return "alternance";
   if (/\b(stage|stagiaire)\b/.test(t)) return "stage";
-  if (s.includes("etudiant") || s.includes("étudiant") || s.includes("flexi")) return "etudiant";
+  if (s.includes("flexi") || /\bflexi/.test(t)) return "flexi";
+  if (s.includes("etudiant") || s.includes("étudiant")) return "etudiant";
   if (s.includes("intérim")) return "interim";
   if (s.includes("indéterminée")) return "cdi";
   if (/déterminée|remplacement|journalier|nettement/.test(s)) return "cdd";
