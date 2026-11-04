@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { CvFields } from "@/lib/cvParse";
 import { getDict } from "@/lib/i18n";
 import { isEligibleAge, regionFromPostcode } from "@/lib/belgium";
 import { store } from "@/lib/store";
 import type { ContractType, Lang, Profile } from "@/lib/types";
+import CvImport from "./CvImport";
 
 const CONTRACTS: ContractType[] = ["etudiant", "stage", "alternance", "cdd", "cdi"];
+const LANG_INDEX: Record<string, number> = { fr: 0, nl: 1, de: 2, en: 3 };
 
 export default function SignupForm({ lang }: { lang: Lang }) {
   const t = getDict(lang);
@@ -15,6 +18,8 @@ export default function SignupForm({ lang }: { lang: Lang }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [detected, setDetected] = useState<Set<string>>(new Set());
+  const hl = (k: string) => (detected.has(k) ? "filled" : undefined);
   const [f, setF] = useState({
     firstName: "", lastName: "", email: "", birthDate: "",
     street: "", number: "", postcode: "", city: "",
@@ -32,6 +37,27 @@ export default function SignupForm({ lang }: { lang: Lang }) {
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   const region = regionFromPostcode(f.postcode);
+
+  /** Pré-remplit ce qui a été lu. La déclaration de résidence et le consentement restent à cocher à la main. */
+  function fromCv(cv: CvFields, text: string) {
+    setDetected(new Set(Object.entries(cv).filter(([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && !v.length)).map(([k]) => k)));
+    setF((x) => ({
+      ...x,
+      firstName: cv.firstName || x.firstName,
+      lastName: cv.lastName || x.lastName,
+      email: cv.email || x.email,
+      birthDate: cv.birthDate || x.birthDate,
+      street: cv.street || x.street,
+      number: cv.number || x.number,
+      postcode: cv.postcode || x.postcode,
+      city: cv.city || x.city,
+      field: cv.field || x.field,
+      studyLevel: cv.studyLevel !== undefined ? t.studyLevels[cv.studyLevel] ?? x.studyLevel : x.studyLevel,
+      skills: cv.skills?.length ? cv.skills.join(", ") : x.skills,
+      languages: cv.languages?.length ? cv.languages.map((l) => t.langNames[LANG_INDEX[l]]).filter(Boolean) : x.languages,
+      cvText: text,
+    }));
+  }
 
   /** Vérifie l'étape en cours ; renvoie un message d'erreur ou null. */
   function check(i: number): string | null {
@@ -86,14 +112,16 @@ export default function SignupForm({ lang }: { lang: Lang }) {
           <p className="step-label" style={{ marginTop: 8 }}>{step + 1} / 4 · {s.steps[step]}</p>
         </div>
 
+        {step === 0 && <CvImport t={t} onResult={fromCv} />}
+
         {step === 0 && (
           <section className="panel">
             <h3>{s.identity}</h3>
             <div className="grid2">
-              <label>{s.firstName}<input value={f.firstName} onChange={(e) => set("firstName", e.target.value)} autoComplete="given-name" /></label>
-              <label>{s.lastName}<input value={f.lastName} onChange={(e) => set("lastName", e.target.value)} autoComplete="family-name" /></label>
-              <label>{s.email}<input type="email" value={f.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" /></label>
-              <label>{s.birthDate}<input type="date" value={f.birthDate} onChange={(e) => set("birthDate", e.target.value)} autoComplete="bday" /></label>
+              <label>{s.firstName}<input className={hl("firstName")} value={f.firstName} onChange={(e) => set("firstName", e.target.value)} autoComplete="given-name" /></label>
+              <label>{s.lastName}<input className={hl("lastName")} value={f.lastName} onChange={(e) => set("lastName", e.target.value)} autoComplete="family-name" /></label>
+              <label>{s.email}<input type="email" className={hl("email")} value={f.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" /></label>
+              <label>{s.birthDate}<input type="date" className={hl("birthDate")} value={f.birthDate} onChange={(e) => set("birthDate", e.target.value)} autoComplete="bday" /></label>
             </div>
           </section>
         )}
@@ -102,14 +130,14 @@ export default function SignupForm({ lang }: { lang: Lang }) {
           <section className="panel">
             <h3>{s.address}</h3>
             <div className="grid2">
-              <label className="span2">{s.street}<input value={f.street} onChange={(e) => set("street", e.target.value)} autoComplete="address-line1" /></label>
-              <label>{s.number}<input value={f.number} onChange={(e) => set("number", e.target.value)} /></label>
+              <label className="span2">{s.street}<input className={hl("street")} value={f.street} onChange={(e) => set("street", e.target.value)} autoComplete="address-line1" /></label>
+              <label>{s.number}<input className={hl("number")} value={f.number} onChange={(e) => set("number", e.target.value)} /></label>
               <label>
                 {s.postcode}
-                <input inputMode="numeric" maxLength={4} value={f.postcode} onChange={(e) => set("postcode", e.target.value.replace(/\D/g, ""))} autoComplete="postal-code" />
+                <input inputMode="numeric" maxLength={4} className={hl("postcode")} value={f.postcode} onChange={(e) => set("postcode", e.target.value.replace(/\D/g, ""))} autoComplete="postal-code" />
                 {region && <span className="hint">✓ {t.regions[region]}</span>}
               </label>
-              <label className="span2">{s.city}<input value={f.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" /></label>
+              <label className="span2">{s.city}<input className={hl("city")} value={f.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" /></label>
             </div>
             <label className="check">
               <input type="checkbox" checked={f.declaredResident} onChange={(e) => set("declaredResident", e.target.checked)} />
@@ -128,14 +156,14 @@ export default function SignupForm({ lang }: { lang: Lang }) {
               ))}
             </div>
             <div className="grid2">
-              <label className="span2">{s.field}<input value={f.field} onChange={(e) => set("field", e.target.value)} /></label>
+              <label className="span2">{s.field}<input className={hl("field")} value={f.field} onChange={(e) => set("field", e.target.value)} /></label>
               <label>{s.studyLevel}
-                <select value={f.studyLevel} onChange={(e) => set("studyLevel", e.target.value)}>
+                <select className={hl("studyLevel")} value={f.studyLevel} onChange={(e) => set("studyLevel", e.target.value)}>
                   {t.studyLevels.map((l) => <option key={l}>{l}</option>)}
                 </select>
               </label>
               <label>{s.mobility}<input type="number" min={0} max={200} value={f.mobilityKm} onChange={(e) => set("mobilityKm", Number(e.target.value))} /></label>
-              <label className="span2">{s.skills}<input value={f.skills} onChange={(e) => set("skills", e.target.value)} /></label>
+              <label className="span2">{s.skills}<input className={hl("skills")} value={f.skills} onChange={(e) => set("skills", e.target.value)} /></label>
             </div>
             <p className="label">{s.languages}</p>
             <div className="chips">

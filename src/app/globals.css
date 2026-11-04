@@ -435,3 +435,5 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 
 .burst-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .burst-bar span { display: block; height: 100%; background: var(--brand); transition: width 0.2s; }
+
+.filled { border-color: var(--brand); background: var(--brand-soft); }
