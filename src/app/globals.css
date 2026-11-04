@@ -381,7 +381,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .check input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--brand); }
 .hint { color: var(--ok); font-weight: 600; font-size: 0.85rem; }
 .error { color: var(--bad); font-weight: 600; margin: 0; }
-.progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.progress { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .progress span { height: 6px; border-radius: 3px; background: var(--line); }
 .progress span.on { background: var(--brand); }
 .step-label { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
@@ -439,7 +439,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .filled { border-color: var(--brand); background: var(--brand-soft); }
 
 .cv-hero { border: 2px solid var(--brand); }
-.cv-hero h3 { font-size: 1.4rem; }
+.cv-added { margin: 0; font-weight: 700; color: var(--ok); overflow-wrap: anywhere; }
+.file-btn { position: relative; overflow: hidden; cursor: pointer; }
+.file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; width: 100%; padding: 0; border: 0; }
 
 .filter-box { display: grid; gap: 10px; }
 .filter-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

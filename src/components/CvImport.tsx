@@ -11,9 +11,19 @@ function withoutContact(text: string, f: CvFields): string {
     .reduce((t, x) => t.split(x).join(" "), text);
 }
 
-export default function CvImport({ t, onResult }: { t: Dict; onResult: (f: CvFields, text: string) => void }) {
+const ACCEPT = ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
+
+interface Props {
+  t: Dict;
+  /** Un CV est déjà enregistré (modification du profil). */
+  hasCv: boolean;
+  onResult: (f: CvFields, text: string) => void;
+}
+
+export default function CvImport({ t, hasCv, onResult }: Props) {
   const c = t.signup.import;
   const [state, setState] = useState<"idle" | "busy" | "done" | "empty">("idle");
+  const [name, setName] = useState("");
   const [pasted, setPasted] = useState("");
   const [aiOk, setAiOk] = useState(false);
 
@@ -49,35 +59,38 @@ export default function CvImport({ t, onResult }: { t: Dict; onResult: (f: CvFie
 
   async function onFile(file?: File) {
     if (!file) return;
+    setName(file.name);
     setState("busy");
     await analyse(await readCvFile(file).catch(() => ""));
   }
 
+  const added = state === "done" || (hasCv && state === "idle");
+  const picker = <input type="file" accept={ACCEPT} className="file-input" onChange={(e) => onFile(e.target.files?.[0])} />;
+
+  if (added)
+    return (
+      <section className="panel cv-hero">
+        <p className="cv-added">✓ {name || c.saved}</p>
+        {state === "done" && <p className="muted" style={{ margin: 0 }}>{c.done}</p>}
+        <label className="btn small file-btn" style={{ justifySelf: "start" }}>{c.replace}{picker}</label>
+      </section>
+    );
+
   return (
     <section className="panel cv-hero">
-      <h3>{c.title}</h3>
-      {state === "done" ? (
-        <p className="banner ok" style={{ margin: 0 }}>{c.done}</p>
-      ) : (
-        <>
-          <p className="muted" style={{ margin: 0 }}>{c.lead}</p>
-          <label className="check">
-            <input type="checkbox" checked={aiOk} onChange={(e) => setAiOk(e.target.checked)} />
-            {c.consent}
-          </label>
-          <label className="btn dark big block">
-            {state === "busy" ? c.busy : c.button}
-            <input type="file" accept=".pdf,.docx,.txt" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-          </label>
-          {state === "empty" && <p className="error" role="alert">{c.empty}</p>}
-          <details>
-            <summary className="small muted" style={{ cursor: "pointer" }}>{c.paste}</summary>
-            <textarea rows={6} value={pasted} onChange={(e) => setPasted(e.target.value)} style={{ marginTop: 8 }} />
-            <button type="button" className="btn small" style={{ marginTop: 8 }} onClick={() => { setState("busy"); void analyse(pasted); }}>{c.analyse}</button>
-          </details>
-          <p className="muted small" style={{ margin: 0 }}>{c.privacy}</p>
-        </>
-      )}
+      <label className="btn dark big block file-btn">{state === "busy" ? c.busy : c.button}{picker}</label>
+      <p className="muted" style={{ margin: 0, textAlign: "center" }}>{c.lead}</p>
+      {state === "empty" && <p className="error" role="alert">{c.empty}</p>}
+      <label className="check small">
+        <input type="checkbox" checked={aiOk} onChange={(e) => setAiOk(e.target.checked)} />
+        {c.consent}
+      </label>
+      <details>
+        <summary className="small muted" style={{ cursor: "pointer" }}>{c.paste}</summary>
+        <textarea rows={6} value={pasted} onChange={(e) => setPasted(e.target.value)} style={{ marginTop: 8 }} />
+        <button type="button" className="btn small" style={{ marginTop: 8 }} onClick={() => { setName(c.pastedName); setState("busy"); void analyse(pasted); }}>{c.analyse}</button>
+      </details>
+      <p className="muted small" style={{ margin: 0 }}>{c.privacy}</p>
     </section>
   );
 }

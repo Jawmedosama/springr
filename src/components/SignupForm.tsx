@@ -40,8 +40,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
 
   /** Pré-remplit ce qui a été lu. La déclaration de résidence et le consentement restent à cocher à la main. */
   function fromCv(cv: CvFields, text: string) {
-    // À la dernière étape, on complète seulement ce qui est vide.
-    const pick = (current: string, found?: string) => (step === 0 ? found || current : current || found || "");
+    const pick = (current: string, found?: string) => found || current;
     setDetected(new Set(Object.entries(cv).filter(([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && !v.length)).map(([k]) => k)));
     setF((x) => ({
       ...x,
@@ -74,7 +73,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
       if (!f.declaredResident) return s.errors.declare;
     }
     if (i === 2 && f.contracts.length === 0) return s.errors.contracts;
-    if (i === 3 && !f.consent) return s.errors.consent;
+    if (i === 2 && !f.consent) return s.errors.consent;
     return null;
   }
 
@@ -83,7 +82,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
     const err = check(step);
     setError(err);
     if (err) return;
-    if (step < 3) {
+    if (step < 2) {
       setStep(step + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -113,10 +112,10 @@ export default function SignupForm({ lang }: { lang: Lang }) {
           <div className="progress" aria-hidden>
             {s.steps.map((_, i) => <span key={i} className={i <= step ? "on" : ""} />)}
           </div>
-          <p className="step-label" style={{ marginTop: 8 }}>{step + 1} / 4 · {s.steps[step]}</p>
+          <p className="step-label" style={{ marginTop: 8 }}>{step + 1} / 3 · {s.steps[step]}</p>
         </div>
 
-        {(step === 0 || (step === 3 && !f.cvText)) && <CvImport t={t} onResult={fromCv} />}
+        {step === 0 && <CvImport t={t} hasCv={Boolean(f.cvText)} onResult={fromCv} />}
 
         {step === 0 && (
           <section className="panel">
@@ -176,14 +175,6 @@ export default function SignupForm({ lang }: { lang: Lang }) {
                 <button type="button" key={l} className={f.languages.includes(l) ? "chip on" : "chip"} onClick={() => set("languages", toggle(f.languages, l))}>{l}</button>
               ))}
             </div>
-          </section>
-        )}
-
-        {step === 3 && (
-          <section className="panel">
-            <h3>{s.cv}</h3>
-            <p className="muted" style={{ margin: 0 }}>{s.cvHint}</p>
-            <textarea rows={10} value={f.cvText} placeholder={s.cvPlaceholder} onChange={(e) => set("cvText", e.target.value)} />
             <label className="check">
               <input type="checkbox" checked={f.consent} onChange={(e) => set("consent", e.target.checked)} />
               {s.consent}
@@ -191,13 +182,14 @@ export default function SignupForm({ lang }: { lang: Lang }) {
           </section>
         )}
 
+
         {error && <p className="error" role="alert">{error}</p>}
 
         <div className="form-nav">
           {step > 0 ? (
             <button type="button" className="btn" onClick={() => { setError(null); setStep(step - 1); }}>{s.back}</button>
           ) : <span />}
-          <button className="btn dark" type="submit">{step < 3 ? s.next : s.submit}</button>
+          <button className="btn dark" type="submit">{step < 2 ? s.next : s.submit}</button>
         </div>
       </form>
     </main>
