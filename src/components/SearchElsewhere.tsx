@@ -8,6 +8,7 @@ export default function SearchElsewhere({ t, what, where }: { t: Dict; what: str
     ["LinkedIn", `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${encodeURIComponent(where ? `${where}, Belgique` : "Belgique")}`],
     ["Indeed", `https://be.indeed.com/jobs?q=${q}&l=${l}`],
     ["StudentJob", `https://www.studentjob.be/vacatures?search%5Bkeywords_scope%5D=${q}`],
+    ["Facebook", `https://www.facebook.com/search/groups?q=${encodeURIComponent(`emploi ${where || "Belgique"}`)}`],
   ];
   return (
     <div className="elsewhere">
