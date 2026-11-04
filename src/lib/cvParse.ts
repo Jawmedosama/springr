@@ -5,6 +5,7 @@ export interface CvFields {
   firstName?: string;
   lastName?: string;
   email?: string;
+  phone?: string;
   birthDate?: string;
   street?: string;
   number?: string;
@@ -70,6 +71,7 @@ export function parseCv(text: string): CvFields {
   const next = title >= 0 ? lines[title + 1] : undefined;
   if (next && next.length < 50 && !/[\d@]/.test(next) && !SECTION.test(next)) f.field = next;
   f.email = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/)?.[0];
+  f.phone = text.match(/(?:\+32|0032|\b0)[ ./-]?[1-9](?:[ ./-]?\d){7,8}\b/)?.[0].trim();
   const birth = text.match(BIRTH);
   if (birth) f.birthDate = `${birth[3]}-${birth[2].padStart(2, "0")}-${birth[1].padStart(2, "0")}`;
   const street = text.match(STREET);

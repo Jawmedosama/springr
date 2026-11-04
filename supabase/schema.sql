@@ -5,6 +5,7 @@ create table profiles (
   id uuid primary key references auth.users on delete cascade,
   first_name text not null,
   last_name text not null,
+  phone text,
   birth_date date not null,
   street text not null,
   house_number text not null,

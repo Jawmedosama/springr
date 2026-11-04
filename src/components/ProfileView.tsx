@@ -58,7 +58,7 @@ export default function ProfileView({ lang }: { lang: Lang }) {
         </span>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0 }}>{profile.firstName} {profile.lastName}</h1>
-          <p>{profile.email}</p>
+          <p>{[profile.email, profile.phone].filter(Boolean).join(" · ")}</p>
         </div>
         <Link className="btn" href={`/${lang}/inscription`}>{p.edit}</Link>
       </div>
@@ -124,7 +124,7 @@ export default function ProfileView({ lang }: { lang: Lang }) {
                   `CV - ${profile.firstName} ${profile.lastName}`,
                   [
                     `${profile.firstName} ${profile.lastName}`,
-                    `${profile.email} · ${profile.city}`,
+                    [profile.email, profile.phone, profile.city].filter(Boolean).join(" · "),
                     "",
                     profile.field,
                     profile.studyLevel,

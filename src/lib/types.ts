@@ -34,6 +34,8 @@ export interface Profile {
   firstName: string;
   lastName: string;
   email: string;
+  /** Jamais envoyé à l'IA. */
+  phone?: string;
   birthDate: string;
   street: string;
   number: string;

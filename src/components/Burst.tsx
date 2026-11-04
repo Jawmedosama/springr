@@ -112,7 +112,7 @@ export default function Burst({ lang }: { lang: Lang }) {
           <div className="sheet-actions">
             <button className="btn dark" disabled={busy || !letter} onClick={copyAndOpen}>{copied ? r.copied : r.open}</button>
             {emailInOffer(current.offer) && (
-              <a className="btn" href={mailtoLink(current.offer, letter, `${r.subject} ${current.offer.title}`)}>{r.email}</a>
+              <a className="btn" href={mailtoLink(current.offer, letter, `${r.subject} ${current.offer.title}`, profile.phone)}>{r.email}</a>
             )}
           </div>
           <div className="form-nav">

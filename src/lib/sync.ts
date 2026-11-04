@@ -12,6 +12,7 @@ type ProfileRow = {
   id: string;
   first_name: string;
   last_name: string;
+  phone?: string | null;
   birth_date: string;
   street: string;
   house_number: string;
@@ -67,6 +68,7 @@ const fromProfileRow = (r: ProfileRow, email: string): Profile => ({
   firstName: r.first_name,
   lastName: r.last_name,
   email,
+  phone: r.phone ?? undefined,
   birthDate: r.birth_date,
   street: r.street,
   number: r.house_number,

@@ -6,7 +6,7 @@ import type { Dict } from "@/lib/i18n";
 
 /** Coordonnées lues dans le navigateur ; seul le reste du CV, nettoyé, part à l'IA. */
 function withoutContact(text: string, f: CvFields): string {
-  return [f.firstName, f.lastName, f.email, f.street, f.city]
+  return [f.firstName, f.lastName, f.email, f.phone, f.street, f.city]
     .filter((x): x is string => Boolean(x))
     .reduce((t, x) => t.split(x).join(" "), text);
 }
@@ -54,7 +54,7 @@ export default function CvImport({ t, onResult }: { t: Dict; onResult: (f: CvFie
   }
 
   return (
-    <section className="panel">
+    <section className="panel cv-hero">
       <h3>{c.title}</h3>
       {state === "done" ? (
         <p className="banner ok" style={{ margin: 0 }}>{c.done}</p>
@@ -65,7 +65,7 @@ export default function CvImport({ t, onResult }: { t: Dict; onResult: (f: CvFie
             <input type="checkbox" checked={aiOk} onChange={(e) => setAiOk(e.target.checked)} />
             {c.consent}
           </label>
-          <label className="btn dark" style={{ display: "inline-flex", justifySelf: "start" }}>
+          <label className="btn dark big block">
             {state === "busy" ? c.busy : c.button}
             <input type="file" accept=".pdf,.docx,.txt" hidden onChange={(e) => onFile(e.target.files?.[0])} />
           </label>

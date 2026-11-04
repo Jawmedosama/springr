@@ -134,7 +134,7 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
             <a className="btn" href={offer.url} target="_blank" rel="noreferrer">{p.openOffer}</a>
           )}
           {emailInOffer(offer) && docs.letter && (
-            <a className="btn" href={mailtoLink(offer, docs.letter, `${t.burst.subject} ${offer.title}`)}>{t.burst.email}</a>
+            <a className="btn" href={mailtoLink(offer, docs.letter, `${t.burst.subject} ${offer.title}`, profile.phone)}>{t.burst.email}</a>
           )}
           <button className="btn" onClick={() => save(false)}>{p.save}</button>
           <button className="btn brand" onClick={() => save(true)}>{p.sent}</button>

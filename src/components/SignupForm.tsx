@@ -21,7 +21,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
   const [detected, setDetected] = useState<Set<string>>(new Set());
   const hl = (k: string) => (detected.has(k) ? "filled" : undefined);
   const [f, setF] = useState({
-    firstName: "", lastName: "", email: "", birthDate: "",
+    firstName: "", lastName: "", email: "", phone: "", birthDate: "",
     street: "", number: "", postcode: "", city: "",
     studyLevel: t.studyLevels[0], field: "", skills: "",
     languages: [] as string[], contracts: [] as ContractType[], mobilityKm: 30,
@@ -31,7 +31,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
 
   useEffect(() => {
     const p = store.getProfile();
-    if (p) setF((x) => ({ ...x, ...p, skills: p.skills.join(", "), cvText: p.cvText ?? "", consent: true }));
+    if (p) setF((x) => ({ ...x, ...p, phone: p.phone ?? "", skills: p.skills.join(", "), cvText: p.cvText ?? "", consent: true }));
   }, []);
 
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
@@ -40,18 +40,21 @@ export default function SignupForm({ lang }: { lang: Lang }) {
 
   /** Pré-remplit ce qui a été lu. La déclaration de résidence et le consentement restent à cocher à la main. */
   function fromCv(cv: CvFields, text: string) {
+    // À la dernière étape, on complète seulement ce qui est vide.
+    const pick = (current: string, found?: string) => (step === 0 ? found || current : current || found || "");
     setDetected(new Set(Object.entries(cv).filter(([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && !v.length)).map(([k]) => k)));
     setF((x) => ({
       ...x,
-      firstName: cv.firstName || x.firstName,
-      lastName: cv.lastName || x.lastName,
-      email: cv.email || x.email,
-      birthDate: cv.birthDate || x.birthDate,
-      street: cv.street || x.street,
-      number: cv.number || x.number,
-      postcode: cv.postcode || x.postcode,
-      city: cv.city || x.city,
-      field: cv.field || x.field,
+      firstName: pick(x.firstName, cv.firstName),
+      lastName: pick(x.lastName, cv.lastName),
+      email: pick(x.email, cv.email),
+      phone: pick(x.phone, cv.phone),
+      birthDate: pick(x.birthDate, cv.birthDate),
+      street: pick(x.street, cv.street),
+      number: pick(x.number, cv.number),
+      postcode: pick(x.postcode, cv.postcode),
+      city: pick(x.city, cv.city),
+      field: pick(x.field, cv.field),
       studyLevel: cv.studyLevel !== undefined ? t.studyLevels[cv.studyLevel] ?? x.studyLevel : x.studyLevel,
       skills: cv.skills?.length ? cv.skills.join(", ") : x.skills,
       languages: cv.languages?.length ? cv.languages.map((l) => t.langNames[LANG_INDEX[l]]).filter(Boolean) : x.languages,
@@ -85,12 +88,13 @@ export default function SignupForm({ lang }: { lang: Lang }) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    const { consent: _c, skills, cvText, ...rest } = f;
+    const { consent: _c, skills, cvText, phone, ...rest } = f;
     const profile: Profile = {
       ...rest,
       region: region!,
       skills: skills.split(",").map((x) => x.trim()).filter(Boolean),
       cvText: cvText.trim() || undefined,
+      phone: phone.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
     store.setProfile(profile);
@@ -121,6 +125,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
               <label>{s.firstName}<input className={hl("firstName")} value={f.firstName} onChange={(e) => set("firstName", e.target.value)} autoComplete="given-name" /></label>
               <label>{s.lastName}<input className={hl("lastName")} value={f.lastName} onChange={(e) => set("lastName", e.target.value)} autoComplete="family-name" /></label>
               <label>{s.email}<input type="email" className={hl("email")} value={f.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" /></label>
+              <label>{s.phone}<input type="tel" className={hl("phone")} value={f.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel" /></label>
               <label>{s.birthDate}<input type="date" className={hl("birthDate")} value={f.birthDate} onChange={(e) => set("birthDate", e.target.value)} autoComplete="bday" /></label>
             </div>
           </section>

@@ -27,9 +27,10 @@ export function emailInOffer(o: Offer): string | null {
   return o.description.match(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i)?.[0] ?? null;
 }
 
-export function mailtoLink(o: Offer, letter: string, subject: string): string {
+export function mailtoLink(o: Offer, letter: string, subject: string, phone?: string): string {
   const to = emailInOffer(o);
-  return to ? `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(letter)}` : "";
+  const body = phone ? `${letter}\n${phone}` : letter;
+  return to ? `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}` : "";
 }
 
 /** Ouvre le document dans une fenêtre d'impression : « Enregistrer en PDF » donne un fichier propre. */
