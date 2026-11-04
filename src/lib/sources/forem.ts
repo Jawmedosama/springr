@@ -117,7 +117,16 @@ async function locate(city: string): Promise<{ lon: number; lat: number } | null
   return data.results?.[0]?.lieuxtravailgeo?.[0] ?? null;
 }
 
+/** Valeurs du jeu de données pour les contrats qu'on peut chercher directement. */
+const CONTRACT_VALUES: Partial<Record<ContractType, string>> = {
+  etudiant: "Etudiant",
+  flexi: "Flexi-Jobs",
+  cdi: "Durée indéterminée",
+  cdd: "Durée déterminée",
+};
+
 export interface ForemQuery {
+  contracts?: ContractType[];
   what?: string;
   where?: string;
   km?: number;
@@ -128,6 +137,9 @@ export async function fetchForem(q: ForemQuery = {}): Promise<Offer[]> {
   const today = new Date().toISOString().slice(0, 10);
   const filters = [`lieuxtravailregion="Belgique"`, `datefindiffusion >= date'${today}'`];
   if (q.what) filters.push(quote(q.what));
+  const wanted = (q.contracts ?? []).map((c) => CONTRACT_VALUES[c]).filter((v): v is string => Boolean(v));
+  // Si un contrat demandé n'existe pas ici (stage, alternance), on ne restreint pas : le filtre se fait ensuite sur le titre.
+  if (wanted.length && wanted.length === q.contracts?.length) filters.push(`(${wanted.map((v) => `typecontrat=${quote(v)}`).join(" or ")})`);
   if (q.region) filters.push(`lieuxtravailregion=${quote(REGION_LABELS[q.region])}`);
   if (q.where) {
     const point = await locate(q.where);

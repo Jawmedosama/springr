@@ -39,12 +39,13 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [toast, setToast] = useState<string | null>(null);
   const start = useRef<number | null>(null);
 
-  const load = useCallback((w: string, c: string, km?: number) => {
+  const load = useCallback((w: string, c: string, km?: number, contracts: string[] = []) => {
     setOffers(null);
     const qs = new URLSearchParams();
     if (w.trim()) qs.set("what", w.trim());
     if (c.trim()) qs.set("where", c.trim());
     if (km) qs.set("km", String(km));
+    if (contracts.length) qs.set("contracts", contracts.join(","));
     fetch(`/api/offers?${qs}`)
       .then((r) => r.json())
       .then((d: { offers: Offer[]; agencies: Offer[]; demo: boolean }) => {
@@ -65,7 +66,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     setWhere(c);
     const f = loadFilters();
     setFilters(f);
-    load(w, c, f.km ?? p?.mobilityKm);
+    load(w, c, f.km ?? p?.mobilityKm, f.contracts);
   }, [load]);
 
   const ranked: Ranked[] = useMemo(() => {
@@ -118,12 +119,12 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   function changeFilters(next: Filters) {
     setFilters(next);
     saveFilters(next);
-    if (next.km !== filters.km) load(what, where, next.km ?? profile?.mobilityKm);
+    if (next.km !== filters.km || next.contracts.join() !== filters.contracts.join()) load(what, where, next.km ?? profile?.mobilityKm, next.contracts);
   }
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    load(what, where, filters.km ?? profile?.mobilityKm);
+    load(what, where, filters.km ?? profile?.mobilityKm, filters.contracts);
   }
 
   function openPrep(offer: Offer) {

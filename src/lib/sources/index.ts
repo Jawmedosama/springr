@@ -1,5 +1,5 @@
 import { cityLabel } from "../belgium";
-import type { Offer, Region } from "../types";
+import type { ContractType, Offer, Region } from "../types";
 import { fetchAdzuna } from "./adzuna";
 import { fetchCareerjet, fetchJooble } from "./aggregators";
 import { fetchCareers } from "./careers";
@@ -52,6 +52,7 @@ export interface OfferQuery {
   where?: string;
   /** Distance maximale autour de la ville, en km. */
   km?: number;
+  contracts?: ContractType[];
 }
 
 export interface OffersResult {
@@ -73,7 +74,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   const what = q.what?.trim() ?? "";
   const where = q.where?.trim() ?? "";
   const km = Math.min(200, Math.max(5, q.km ?? 30));
-  const calls: Promise<Offer[]>[] = [fetchForem({ what, where, km }), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
+  const calls: Promise<Offer[]>[] = [fetchForem({ what, where, km, contracts: q.contracts }), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
   calls.push(fetchCareers({ what, where }), fetchJooble(what, where, km), fetchCareerjet(what, where));
