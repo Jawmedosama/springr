@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  activeCount, CONTRACT_CHOICES, DAY_CHOICES, HOUR_CHOICES, KM_CHOICES, LANG_CHOICES, NO_FILTERS, type Filters,
+  activeCount, CONTRACT_CHOICES, DAY_CHOICES, HOUR_CHOICES, KM_CHOICES, LANG_CHOICES, NO_FILTERS, REGION_CHOICES, type Filters,
 } from "@/lib/filters";
 import type { Dict } from "@/lib/i18n";
 
@@ -10,12 +10,14 @@ interface Props {
   t: Dict;
   filters: Filters;
   count: number;
+  /** Communes présentes dans les offres, les plus fréquentes d'abord. */
+  cities: string[];
   onChange: (f: Filters) => void;
 }
 
 const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
-export default function FilterPanel({ t, filters: f, count, onChange }: Props) {
+export default function FilterPanel({ t, filters: f, count, cities, onChange }: Props) {
   const l = t.filters;
   const [open, setOpen] = useState(false);
   const n = activeCount(f);
@@ -28,6 +30,8 @@ export default function FilterPanel({ t, filters: f, count, onChange }: Props) {
   /** Pastilles des filtres actifs, retirables en un clic. */
   const pills: [string, () => void][] = [
     ...f.contracts.map((c): [string, () => void] => [t.contracts[c], () => set({ contracts: toggle(f.contracts, c) })]),
+    ...f.regions.map((r): [string, () => void] => [t.regions[r], () => set({ regions: toggle(f.regions, r) })]),
+    ...(f.city.trim() ? [[f.city.trim(), () => set({ city: "" })] as [string, () => void]] : []),
     ...f.hours.map((h): [string, () => void] => [l.hours[h], () => set({ hours: toggle(f.hours, h) })]),
     ...(f.lang ? [[l.langs[f.lang], () => set({ lang: null })] as [string, () => void]] : []),
     ...(f.days ? [[l.daysLabel.replace("{n}", String(f.days)), () => set({ days: null })] as [string, () => void]] : []),
@@ -60,6 +64,14 @@ export default function FilterPanel({ t, filters: f, count, onChange }: Props) {
             <p className="label">{l.contract}</p>
             <div className="chips">{CONTRACT_CHOICES.map((c) => chip(f.contracts.includes(c), t.contracts[c], () => set({ contracts: toggle(f.contracts, c) })))}</div>
           </div>
+          <div>
+            <p className="label">{l.region}</p>
+            <div className="chips">{REGION_CHOICES.map((r) => chip(f.regions.includes(r), t.regions[r], () => set({ regions: toggle(f.regions, r) })))}</div>
+          </div>
+          <label>{l.city}
+            <input list="filter-cities" value={f.city} placeholder={l.cityHint} onChange={(e) => set({ city: e.target.value })} />
+            <datalist id="filter-cities">{cities.map((c) => <option key={c} value={c} />)}</datalist>
+          </label>
           <div>
             <p className="label">{l.language}</p>
             <div className="chips">{LANG_CHOICES.map((x) => chip(f.lang === x, l.langs[x], () => set({ lang: f.lang === x ? null : x })))}</div>

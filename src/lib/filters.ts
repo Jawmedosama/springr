@@ -1,11 +1,15 @@
 import { isAccessible } from "./accessible";
-import type { ContractType, Offer } from "./types";
+import { cityLabel } from "./belgium";
+import type { ContractType, Offer, Region } from "./types";
 
 export type AdLang = "fr" | "nl" | "en";
 export type Hours = "partiel" | "weekend" | "soir";
 
 export interface Filters {
   contracts: ContractType[];
+  regions: Region[];
+  /** Commune recherchée dans les offres affichées. */
+  city: string;
   lang: AdLang | null;
   /** Publiée depuis moins de N jours. */
   days: number | null;
@@ -16,9 +20,10 @@ export interface Filters {
   hideAgencies: boolean;
 }
 
-export const NO_FILTERS: Filters = { contracts: [], lang: null, days: null, km: null, hours: [], easy: false, hideAgencies: false };
+export const NO_FILTERS: Filters = { contracts: [], regions: [], city: "", lang: null, days: null, km: null, hours: [], easy: false, hideAgencies: false };
 
 export const CONTRACT_CHOICES: ContractType[] = ["etudiant", "flexi", "stage", "alternance", "cdd", "cdi", "interim"];
+export const REGION_CHOICES: Region[] = ["bruxelles", "wallonie", "flandre"];
 export const DAY_CHOICES = [1, 7, 30];
 export const KM_CHOICES = [5, 10, 30, 50, 100];
 export const HOUR_CHOICES: Hours[] = ["partiel", "weekend", "soir"];
@@ -47,8 +52,17 @@ const HOURS: Record<Hours, RegExp> = {
   soir: /\bsoir|soirée|avond|\bnuit\b|nacht/i,
 };
 
+const plain = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+function inCity(o: Offer, city: string): boolean {
+  const wanted = plain(city.trim());
+  return [o.city, cityLabel(o.city, "fr"), cityLabel(o.city, "nl")].some((c) => plain(c).includes(wanted));
+}
+
 export function matchesFilters(o: Offer, f: Filters): boolean {
   if (f.contracts.length && !f.contracts.includes(o.contract)) return false;
+  if (f.regions.length && !(o.region && f.regions.includes(o.region))) return false;
+  if (f.city.trim() && !inCity(o, f.city)) return false;
   if (f.lang) {
     if (adLanguage(o) !== f.lang) return false;
     if (f.lang === "fr" && asksDutch(o)) return false;
@@ -61,7 +75,7 @@ export function matchesFilters(o: Offer, f: Filters): boolean {
 }
 
 export function activeCount(f: Filters): number {
-  return f.contracts.length + f.hours.length + [f.lang, f.days, f.km, f.easy || null, f.hideAgencies || null].filter(Boolean).length;
+  return f.contracts.length + f.regions.length + f.hours.length + [f.city.trim(), f.lang, f.days, f.km, f.easy || null, f.hideAgencies || null].filter(Boolean).length;
 }
 
 const KEY = "springr.filters";
