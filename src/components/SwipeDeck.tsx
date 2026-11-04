@@ -40,9 +40,12 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const start = useRef<number | null>(null);
 
   const latest = useRef(0);
+  const [page, setPage] = useState(0);
+  const [more, setMore] = useState(false);
 
   const load = useCallback((w: string, c: string, f: Filters, km?: number) => {
     setOffers(null);
+    setPage(0);
     const id = ++latest.current;
     fetch(`/api/offers?${searchParams(w, c, f, km)}`)
       .then((r) => r.json())
@@ -114,6 +117,25 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [decide, detail, prep]);
+
+  /** Ajoute la page suivante aux offres déjà chargées. */
+  async function loadMore() {
+    const next = page + 1;
+    const id = latest.current;
+    setMore(true);
+    const qs = searchParams(what, where, filters, profile?.mobilityKm);
+    qs.set("page", String(next));
+    const d = (await fetch(`/api/offers?${qs}`).then((r) => r.json()).catch(() => null)) as { offers: Offer[]; agencies: Offer[]; demo: boolean } | null;
+    setMore(false);
+    if (!d || d.demo || id !== latest.current) return;
+    const add = (list: Offer[], extra: Offer[]) => {
+      const ids = new Set(list.map((x) => x.id));
+      return [...list, ...extra.filter((x) => !ids.has(x.id))];
+    };
+    setOffers((list) => add(list ?? [], d.offers));
+    setAgencies((list) => add(list, d.agencies ?? []));
+    setPage(next);
+  }
 
   function changeFilters(next: Filters) {
     setFilters(next);
@@ -236,6 +258,10 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           </>
         )}
       </div>
+
+      {offers !== null && (
+        <button className="btn block" style={{ marginTop: 16 }} disabled={more} onClick={loadMore}>{more ? o.loading : o.more}</button>
+      )}
 
       <SearchElsewhere t={t} what={what} where={where} />
 

@@ -146,6 +146,8 @@ export interface ForemQuery {
   km?: number;
   region?: Region;
   province?: Province;
+  /** Page de résultats, à partir de 0. */
+  page?: number;
 }
 
 export async function fetchForem(q: ForemQuery = {}): Promise<Offer[]> {
@@ -169,10 +171,11 @@ export async function fetchForem(q: ForemQuery = {}): Promise<Offer[]> {
   const base = { order_by: "datedebutdiffusion desc", limit: "100" };
   const clause = filters.join(" and ");
   // Les offres directes d'abord : sans ce tri, les agences occuperaient presque toutes les places.
+  const page = q.page ?? 0;
   const results = await Promise.all([
-    query({ ...base, where: `${clause} and ${direct}` }),
-    query({ ...base, where: `${clause} and ${direct}`, offset: "100" }),
-    query({ ...base, where: clause, limit: "40" }),
+    query({ ...base, where: `${clause} and ${direct}`, offset: String(page * 200) }),
+    query({ ...base, where: `${clause} and ${direct}`, offset: String(page * 200 + 100) }),
+    query({ ...base, where: clause, offset: String(page * 100) }),
   ]);
   const seen = new Set<string>();
   return results

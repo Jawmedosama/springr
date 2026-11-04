@@ -56,6 +56,8 @@ export interface OfferQuery {
   /** Région entière, quand aucune ville n'est choisie. */
   region?: Region;
   provinces?: Province[];
+  /** Page de résultats, à partir de 0 (« Charger plus d'offres »). */
+  page?: number;
 }
 
 const ADZUNA_PROVINCES: Record<Province, string> = {
@@ -91,28 +93,35 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   const places = (q.where ?? "").split(",").map((c) => c.trim()).filter(Boolean).slice(0, 5);
   const km = Math.min(200, Math.max(5, q.km ?? 30));
   const contracts = q.contracts;
+  const page = q.page ?? 0;
+  const first = page === 0;
 
   // Plusieurs provinces : une recherche par province.
   if (q.provinces?.length) {
     const calls = q.provinces.slice(0, 5).flatMap((province) => [
-      fetchForem({ what, contracts, province }),
-      fetchAdzuna(what, 1, ADZUNA_PROVINCES[province], 30),
+      fetchForem({ what, contracts, province, page }),
+      fetchAdzuna(what, page + 1, ADZUNA_PROVINCES[province], 30),
     ]);
-    return finish(await Promise.allSettled([...calls, fetchCareers({ what })]));
+    return finish(await Promise.allSettled(first ? [...calls, fetchCareers({ what })] : calls));
   }
 
   // Plusieurs villes : une recherche par ville, avec le même rayon.
   if (places.length > 1) {
     const calls = places.flatMap((where) => [
-      fetchForem({ what, where, km, contracts }),
-      fetchAdzuna(what, 1, where, km),
-      fetchCareers({ what, where }),
+      fetchForem({ what, where, km, contracts, page }),
+      fetchAdzuna(what, page + 1, where, km),
+      ...(first ? [fetchCareers({ what, where })] : []),
     ]);
     return finish(await Promise.allSettled(calls));
   }
 
   const where = places[0] ?? "";
-  const calls: Promise<Offer[]>[] = [fetchForem({ what, where, km, contracts, region: q.region }), fetchAdzuna(what, 1, where, km), fetchAdzuna(what, 2, where, km)];
+  const calls: Promise<Offer[]>[] = [
+    fetchForem({ what, where, km, contracts, region: q.region, page }),
+    fetchAdzuna(what, page * 2 + 1, where, km),
+    fetchAdzuna(what, page * 2 + 2, where, km),
+  ];
+  if (!first) return finish(await Promise.allSettled(calls));
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
   calls.push(fetchCareers({ what, where, region: q.region }), fetchJooble(what, where, km), fetchCareerjet(what, where));
