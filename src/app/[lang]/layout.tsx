@@ -16,6 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: `${t.brand} · ${t.home.title1} ${t.home.title2}`,
     description: t.home.lead,
+    appleWebApp: { capable: true, title: t.brand, statusBarStyle: "black-translucent" },
   };
 }
 
