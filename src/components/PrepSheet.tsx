@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { emailInOffer, mailtoLink, printAsPdf } from "@/lib/accessible";
 import { cityLabel } from "@/lib/belgium";
 import type { Dict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
@@ -125,11 +126,15 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
             {copied ? p.copied : p.copy}
           </button>
           <button className="btn small" disabled={!text} onClick={download}>{p.download}</button>
+          <button className="btn small" disabled={!text} onClick={() => printAsPdf(`${tab === "letter" ? p.letter : p.cv} - ${profile.firstName} ${profile.lastName}`, text)}>{p.pdf}</button>
         </div>
 
         <div className="sheet-actions" style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
           {offer.url && offer.url !== "#" && (
             <a className="btn" href={offer.url} target="_blank" rel="noreferrer">{p.openOffer}</a>
+          )}
+          {emailInOffer(offer) && docs.letter && (
+            <a className="btn" href={mailtoLink(offer, docs.letter, `${t.burst.subject} ${offer.title}`)}>{t.burst.email}</a>
           )}
           <button className="btn" onClick={() => save(false)}>{p.save}</button>
           <button className="btn brand" onClick={() => save(true)}>{p.sent}</button>

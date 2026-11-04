@@ -432,3 +432,6 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .burger svg { width: 20px; height: 20px; }
 
 .elsewhere { display: grid; gap: 8px; margin-top: 20px; }
+
+.burst-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.burst-bar span { display: block; height: 100%; background: var(--brand); transition: width 0.2s; }

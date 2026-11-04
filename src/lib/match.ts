@@ -1,3 +1,4 @@
+import { hasLittleExperience, welcomesBeginners } from "./accessible";
 import type { Lang, Offer, Profile } from "./types";
 
 export interface MatchResult {
@@ -63,6 +64,11 @@ export function matchOffer(offer: Offer, profile: Profile, ui: Lang): MatchResul
   } else {
     score -= 15 * missing.length;
     warnings.push(t("Une langue demandée te manque", "Een gevraagde taal ontbreekt"));
+  }
+
+  if (hasLittleExperience(profile) && welcomesBeginners(offer)) {
+    score += 10;
+    reasons.push(t("Accessible aux débutants", "Toegankelijk voor beginners"));
   }
 
   const days = Math.floor((Date.now() - new Date(offer.publishedAt).getTime()) / 86400000);

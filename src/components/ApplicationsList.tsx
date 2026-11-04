@@ -60,6 +60,14 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
         </div>
       ) : (
         <>
+          {apps.some((x) => x.status === "a_postuler") && (
+            <p style={{ margin: "0 0 16px" }}>
+              <Link className="btn dark" href={`/${lang}/rafale`}>
+                {t.burst.title} ({apps.filter((x) => x.status === "a_postuler").length})
+              </Link>
+            </p>
+          )}
+
           <div className="kpis">
             {kpis.map((k) => (
               <div key={k.l} className={k.warn && k.n > 0 ? "kpi warn" : "kpi"}><b>{k.n}</b><span>{k.l}</span></div>

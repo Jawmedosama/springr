@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { isAccessible } from "@/lib/accessible";
 import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { matchOffer, type MatchResult } from "@/lib/match";
@@ -32,6 +33,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [what, setWhat] = useState("");
   const [where, setWhere] = useState("");
   const [contract, setContract] = useState<ContractType | "all">("all");
+  const [easyOnly, setEasyOnly] = useState(false);
   const [drag, setDrag] = useState(0);
   const [leaving, setLeaving] = useState<0 | 1 | -1>(0);
   const [detail, setDetail] = useState<Ranked | null>(null);
@@ -71,6 +73,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     const list = (showAgencies ? [...offers, ...agencies] : offers)
       .filter((x) => !seen.has(x.id))
       .filter((x) => contract === "all" || x.contract === contract)
+      .filter((x) => !easyOnly || isAccessible(x))
       .map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null }));
     return profile
       ? list.sort(
@@ -80,7 +83,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
             b.offer.publishedAt.localeCompare(a.offer.publishedAt),
         )
       : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
-  }, [offers, agencies, showAgencies, profile, seen, lang, contract]);
+  }, [offers, agencies, showAgencies, easyOnly, profile, seen, lang, contract]);
 
   const current = ranked[0];
 
@@ -148,6 +151,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         </form>
 
         <div className="filters">
+          <button className={easyOnly ? "chip on" : "chip"} onClick={() => setEasyOnly(!easyOnly)}>{o.easy}</button>
           <button className={contract === "all" ? "chip on" : "chip"} onClick={() => setContract("all")}>{o.all}</button>
           {CONTRACTS.map((c) => (
             <button key={c} className={contract === c ? "chip on" : "chip"} onClick={() => setContract(c)}>{t.contracts[c]}</button>
@@ -228,6 +232,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
             <div className="deck-meta">
               <span>{ranked.length} {o.left}</span>
+              <Link className="chip" href={`/${lang}/rafale`} style={{ textDecoration: "none" }}>{t.burst.title} →</Link>
               {agencies.length > 0 && (
                 <button className="chip" onClick={() => setShowAgencies(!showAgencies)}>
                   {showAgencies ? o.hideAgencies : `${o.showAgencies} (${agencies.length})`}
