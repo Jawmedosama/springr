@@ -1,0 +1,30 @@
+name: Offres du Forem
+
+# Le portail publie ses données vers 2 h UTC. Si elles ont changé, on note leur date :
+# ce commit relance un build Vercel, et le build télécharge toutes les offres.
+# Le gros fichier n'est pas versionné. Pour arrêter : supprimer ce fichier.
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lire la date des données
+        run: |
+          curl -fsS "https://www.odwb.be/api/explore/v2.1/catalog/datasets/offres-d-emploi-forem" \
+            | jq -er '.metas.default.data_processed' > data-version.txt
+      - name: Enregistrer si elle a changé
+        run: |
+          git add data-version.txt
+          git diff --cached --quiet && exit 0
+          git config user.name "springr-bot"
+          git config user.email "209702411+Jawmedosama@users.noreply.github.com"
+          git commit -m "Met à jour les offres du Forem"
+          git push
