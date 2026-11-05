@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { printAsPdf } from "@/lib/accessible";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
@@ -117,35 +116,6 @@ export default function ProfileView({ lang }: { lang: Lang }) {
             <dt>{s.mobility.split(" (")[0]}</dt>
             <dd>{profile.mobilityKm} {p.km}</dd>
           </dl>
-        </section>
-
-        <section className="panel">
-          <h3>{p.cv}</h3>
-          {profile.cvText ? <pre className="cv-preview">{profile.cvText}</pre> : <p className="muted" style={{ margin: 0 }}>{p.cvEmpty}</p>}
-          <div>
-            <button
-              className="btn small"
-              onClick={() =>
-                printAsPdf(
-                  `CV - ${profile.firstName} ${profile.lastName}`,
-                  [
-                    `${profile.firstName} ${profile.lastName}`,
-                    [profile.email, profile.phone, profile.city].filter(Boolean).join(" · "),
-                    "",
-                    profile.field,
-                    profile.studyLevel,
-                    "",
-                    `${s.skills.split(" (")[0]} : ${profile.skills.join(", ")}`,
-                    `${s.languages} : ${profile.languages.join(", ")}`,
-                    "",
-                    profile.cvText ?? "",
-                  ].join("\n"),
-                )
-              }
-            >
-              {t.prep.pdf}
-            </button>
-          </div>
         </section>
 
         <MailSettings t={t} lang={lang} />
