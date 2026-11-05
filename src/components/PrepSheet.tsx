@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { emailInOffer, printAsPdf } from "@/lib/accessible";
-import { mailForOffer } from "@/lib/applyMail";
+import Link from "next/link";
+import { downloadFile, loadCvFile, mailForOffer } from "@/lib/applyMail";
 import { cityLabel } from "@/lib/belgium";
 import type { Dict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
 import { toAiProfile, type Lang, type Offer, type Profile } from "@/lib/types";
 import EmailApply from "./EmailApply";
-
-type Kind = "letter" | "cv";
 
 interface Props {
   offer: Offer;
@@ -24,47 +23,42 @@ interface Props {
 export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClose, onSaved }: Props) {
   const p = t.prep;
   const existing = store.getApps().find((a) => a.offer.id === offer.id);
-  const [tab, setTab] = useState<Kind>("letter");
-  const [docs, setDocs] = useState<Record<Kind, string>>({ letter: existing?.letter ?? "", cv: existing?.cv ?? "" });
-  const [ai, setAi] = useState<Record<Kind, boolean | null>>({ letter: null, cv: null });
-  const [busy, setBusy] = useState<Kind | null>(null);
+  const [text, setText] = useState(existing?.letter ?? "");
+  const [ai, setAi] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [copied, setCopied] = useState(false);
   const [mail, setMail] = useState(false);
   const [mailCopied, setMailCopied] = useState(false);
 
-  async function generate(kind: Kind) {
-    setBusy(kind);
-    const r = await fetch(kind === "letter" ? "/api/letter" : "/api/cv", {
+  async function generate() {
+    setBusy(true);
+    const r = await fetch("/api/letter", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ offer, profile: toAiProfile(profile), lang, spontaneous }),
     })
-      .then((x) => x.json() as Promise<{ letter?: string; cv?: string; ai: boolean }>)
+      .then((x) => x.json() as Promise<{ letter?: string; ai: boolean }>)
       .catch(() => null);
     if (r) {
-      setDocs((d) => ({ ...d, [kind]: (kind === "letter" ? r.letter : r.cv) ?? "" }));
-      setAi((a) => ({ ...a, [kind]: r.ai }));
+      setText(r.letter ?? "");
+      setAi(r.ai);
     }
-    setBusy(null);
+    setBusy(false);
   }
 
   useEffect(() => {
-    if (!docs.letter) generate("letter");
+    if (!text) void generate();
+    loadCvFile().then((f) => setCvFile(f ?? null));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (tab === "cv" && !docs.cv && busy !== "cv") generate("cv");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
-
   function save(sent: boolean) {
     store.saveOffer(offer, {
-      letter: docs.letter,
-      cv: docs.cv,
+      letter: text,
       spontaneous,
       ...(sent ? { status: "envoyee" as const, remindAt: inDays(FOLLOW_UP_DAYS) } : {}),
     });
@@ -80,8 +74,8 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
   }
 
   function download() {
-    const name = `${tab === "letter" ? "lettre" : "cv"}-${offer.company || "springr"}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const url = URL.createObjectURL(new Blob([docs[tab]], { type: "text/plain;charset=utf-8" }));
+    const name = `lettre-${offer.company || "springr"}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
     a.download = `${name}.txt`;
@@ -89,7 +83,6 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
     URL.revokeObjectURL(url);
   }
 
-  const text = docs[tab];
   return (
     <div className="sheet-bg" onClick={onClose}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={p.title} onClick={(e) => e.stopPropagation()}>
@@ -102,29 +95,24 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
           <button className="close" onClick={onClose} aria-label={t.offers.close}>✕</button>
         </div>
 
-        <div className="tabs" role="tablist">
-          <button role="tab" aria-selected={tab === "letter"} className={tab === "letter" ? "on" : ""} onClick={() => setTab("letter")}>{p.letter}</button>
-          <button role="tab" aria-selected={tab === "cv"} className={tab === "cv" ? "on" : ""} onClick={() => setTab("cv")}>{p.cv}</button>
-        </div>
+        <h3 style={{ margin: 0 }}>{p.letter}</h3>
 
-        {!profile.cvText && <p className="banner">{p.noCv}</p>}
-
-        {busy === tab ? (
+        {busy ? (
           <div className="skeleton" style={{ height: 300, borderRadius: 14 }} aria-label={p.loading} />
         ) : (
           <textarea
             className="doc"
             value={text}
-            onChange={(e) => setDocs((d) => ({ ...d, [tab]: e.target.value }))}
+            onChange={(e) => setText(e.target.value)}
             rows={14}
           />
         )}
         <p className="muted small" style={{ margin: 0 }}>
-          {ai[tab] === true ? p.ai : ai[tab] === false ? p.noAi : ""} {p.privacy}
+          {ai === true ? p.ai : ai === false ? p.noAi : ""} {p.privacy}
         </p>
 
         <div className="sheet-actions">
-          <button className="btn small" onClick={() => generate(tab)} disabled={busy !== null}>{busy === tab ? p.loading : text ? p.regenerate : p.generate}</button>
+          <button className="btn small" onClick={generate} disabled={busy}>{busy ? p.loading : text ? p.regenerate : p.generate}</button>
           <button
             className="btn small"
             disabled={!text}
@@ -138,7 +126,18 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
           </button>
           <button className="btn small" disabled={!text} onClick={download}>{p.download}</button>
           <button className="btn small" onClick={copyMail}>{mailCopied ? p.copied : t.applyMail.copyMail}</button>
-          <button className="btn small" disabled={!text} onClick={() => printAsPdf(`${tab === "letter" ? p.letter : p.cv} - ${profile.firstName} ${profile.lastName}`, text)}>{p.pdf}</button>
+          <button className="btn small" disabled={!text} onClick={() => printAsPdf(`${p.letter} - ${profile.firstName} ${profile.lastName}`, text)}>{p.pdf}</button>
+        </div>
+
+        <div className="sheet-actions" style={{ alignItems: "center" }}>
+          {cvFile ? (
+            <>
+              <span>{p.myCv} : <b>{cvFile.name}</b></span>
+              <button className="btn small" onClick={() => downloadFile(cvFile)}>{p.downloadCv}</button>
+            </>
+          ) : (
+            <Link href={`/${lang}/profil`}>{p.addCv}</Link>
+          )}
         </div>
 
         <div className="sheet-actions" style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
