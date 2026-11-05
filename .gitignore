@@ -8,3 +8,4 @@ next-env.d.ts
 supabase/.temp
 .claude
 data/forem.json
+public/data/
