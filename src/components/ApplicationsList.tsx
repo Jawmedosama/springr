@@ -5,9 +5,8 @@ import Link from "next/link";
 import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
-import type { Application, ApplicationStatus, Lang, Profile } from "@/lib/types";
+import type { Application, ApplicationStatus, Lang } from "@/lib/types";
 import { initials } from "./OfferCard";
-import PrepSheet from "./PrepSheet";
 
 const STATUSES: ApplicationStatus[] = ["a_postuler", "envoyee", "entretien", "refusee", "acceptee"];
 
@@ -15,14 +14,11 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
   const t = getDict(lang);
   const a = t.apps;
   const [apps, setApps] = useState<Application[] | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [filter, setFilter] = useState<ApplicationStatus | "all" | "due">("all");
-  const [prep, setPrep] = useState<Application | null>(null);
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     setApps(store.getApps());
-    setProfile(store.getProfile());
   }, []);
 
   function commit(next: Application[]) {
@@ -109,7 +105,6 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
                     {x.offer.url && x.offer.url !== "#" && (
                       <a className="btn small dark" href={x.offer.url} target="_blank" rel="noreferrer">{a.openAd} ↗</a>
                     )}
-                    {profile && <button className="btn small" onClick={() => setPrep(x)}>{a.prepare}</button>}
                     <button className="btn small ghost" onClick={() => {
                       store.removeApp(x.offer.id);
                       setApps(store.getApps());
@@ -128,17 +123,6 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
         </>
       )}
 
-      {prep && profile && (
-        <PrepSheet
-          offer={prep.offer}
-          profile={profile}
-          lang={lang}
-          t={t}
-          spontaneous={prep.spontaneous}
-          onClose={() => setPrep(null)}
-          onSaved={() => setApps(store.getApps())}
-        />
-      )}
     </main>
   );
 }
