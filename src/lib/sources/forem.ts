@@ -184,9 +184,11 @@ function searchSnapshot(records: Rec[], q: ForemQuery): Offer[] {
   const words = plain(q.what ?? "").split(/\s+/).filter(Boolean);
   const wanted = (q.contracts ?? []).map((c) => CONTRACT_VALUES[c]).filter((v): v is string => Boolean(v));
   const byContract = wanted.length > 0 && wanted.length === q.contracts?.length;
-  const city = q.where ? plain(cityLabel(q.where, "fr")) : "";
+  // Le jeu de données utilise tantôt le nom français, tantôt le nom néerlandais (Gent, Antwerpen).
+  const names = q.where ? [q.where, cityLabel(q.where, "fr"), cityLabel(q.where, "nl")].map(plain) : [];
+  const city = names.length > 0;
   const center = city
-    ? records.find((r) => r.lieuxtravailgeo?.length && r.lieuxtravaillocalite?.some((l) => plain(l) === city))?.lieuxtravailgeo?.[0]
+    ? records.find((r) => r.lieuxtravailgeo?.length && r.lieuxtravaillocalite?.some((l) => names.includes(plain(l))))?.lieuxtravailgeo?.[0]
     : undefined;
   const km = q.km ?? 30;
   const region = q.region && REGION_LABELS[q.region];
@@ -199,7 +201,7 @@ function searchSnapshot(records: Rec[], q: ForemQuery): Offer[] {
     if (city) {
       const near = center
         ? r.lieuxtravailgeo?.some((g) => kmBetween(center, g) <= km)
-        : r.lieuxtravaillocalite?.some((l) => plain(l).includes(city));
+        : r.lieuxtravaillocalite?.some((l) => names.some((n) => plain(l).includes(n)));
       if (!near) return false;
     }
     if (words.length) {
