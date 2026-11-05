@@ -30,7 +30,7 @@ const fr = {
     stats: [
       ["3", "régions couvertes : Bruxelles, Wallonie, Flandre"],
       ["FR · NL", "interface et offres dans les deux langues"],
-      ["IA", "lettre et CV adaptés à chaque offre"],
+      ["IA", "lettre adaptée à chaque offre"],
       ["0 €", "pour chercher, aussi longtemps que tu veux"],
     ],
     howKicker: "Comment ça marche",
@@ -38,7 +38,7 @@ const fr = {
     how: [
       ["Crée ton profil", "Ton métier, ta ville, ce que tu cherches et ton CV. Deux minutes, une seule fois."],
       ["Swipe ton feed", "Les offres arrivent triées par score de match. À droite tu gardes, à gauche tu passes."],
-      ["Postule avec l'IA", "Springr rédige ta lettre et réoriente ton CV pour l'offre. Tu relis, tu envoies, on suit."],
+      ["Postule avec l'IA", "Springr prépare ta lettre pour l'offre. Tu relis, tu envoies avec ton CV, on suit."],
     ],
     featKicker: "Ce que fait Springr",
     featTitle: "Tout ta recherche d'emploi, au même endroit.",
@@ -56,9 +56,9 @@ const fr = {
     },
     ai: {
       tag: "IA intégrée",
-      title: "Ta lettre et ton CV, réécrits pour chaque offre.",
-      text: "Colle ton CV une fois. Pour chaque offre, l'IA rédige une lettre ciblée et réorganise ton CV au format ATS, sans rien inventer. Ton adresse, ton e-mail et ta date de naissance ne sont jamais envoyés à l'IA.",
-      steps: ["Lecture de l'offre", "Analyse de ton profil", "Lettre et CV prêts"],
+      title: "Ta lettre, préparée pour chaque offre.",
+      text: "Dépose ton CV une fois. Pour chaque offre, Springr prépare une lettre ciblée, sans rien inventer. Ton adresse, ton e-mail et ta date de naissance ne sont jamais envoyés à l'IA.",
+      steps: ["Lecture de l'offre", "Analyse de ton profil", "Lettre prête"],
     },
     clean: {
       tag: "Résultats propres",
@@ -82,7 +82,7 @@ const fr = {
       old: ["Chercher sur cinq sites différents", "Tomber sur des annonces d'agences", "Réécrire la même lettre à chaque fois", "Oublier qui relancer et quand"],
       newTag: "Avec Springr",
       newTime: "± 2 min par candidature",
-      new: ["Un feed unique, trié pour toi", "Agences signalées et masquables", "Lettre et CV adaptés par l'IA", "Rappel de relance automatique"],
+      new: ["Un feed unique, trié pour toi", "Agences signalées et masquables", "Lettre préparée pour chaque offre", "Rappel de relance automatique"],
     },
     pricing: {
       title: "Un prix simple. Zéro engagement.",
@@ -94,7 +94,7 @@ const fr = {
           price: "0 €",
           per: "",
           desc: "Pour chercher et postuler",
-          items: ["Feed illimité et score de match", "Entreprises qui recrutent", "Lettres et CV par IA", "Suivi des candidatures et relances"],
+          items: ["Feed illimité et score de match", "Entreprises qui recrutent", "Lettres préparées pour chaque offre", "Suivi des candidatures et relances"],
           cta: "Créer mon profil",
           soon: false,
         },
@@ -424,7 +424,7 @@ const nl: Dict = {
     stats: [
       ["3", "gewesten: Brussel, Wallonië, Vlaanderen"],
       ["NL · FR", "interface en vacatures in beide talen"],
-      ["AI", "brief en cv aangepast aan elke vacature"],
+      ["AI", "brief aangepast aan elke vacature"],
       ["0 €", "om te zoeken, zo lang je wilt"],
     ],
     howKicker: "Hoe het werkt",
@@ -432,7 +432,7 @@ const nl: Dict = {
     how: [
       ["Maak je profiel", "Je beroep, je stad, wat je zoekt en je cv. Twee minuten, één keer."],
       ["Swipe je feed", "Vacatures komen binnen gesorteerd op matchscore. Rechts bewaar je, links sla je over."],
-      ["Solliciteer met AI", "Springr schrijft je brief en past je cv aan voor de vacature. Jij leest na, verstuurt, wij volgen op."],
+      ["Solliciteer met AI", "Springr bereidt je brief voor de vacature voor. Jij leest na, verstuurt met je cv, wij volgen op."],
     ],
     featKicker: "Wat Springr doet",
     featTitle: "Je hele zoektocht naar werk, op één plek.",
@@ -450,9 +450,9 @@ const nl: Dict = {
     },
     ai: {
       tag: "Ingebouwde AI",
-      title: "Je brief en cv, herschreven voor elke vacature.",
-      text: "Plak je cv één keer. Voor elke vacature schrijft de AI een gerichte brief en herschikt je cv in ATS-formaat, zonder iets te verzinnen. Je adres, e-mail en geboortedatum worden nooit naar de AI gestuurd.",
-      steps: ["Vacature lezen", "Je profiel analyseren", "Brief en cv klaar"],
+      title: "Je brief, voorbereid voor elke vacature.",
+      text: "Upload je cv één keer. Voor elke vacature bereidt Springr een gerichte brief voor, zonder iets te verzinnen. Je adres, e-mail en geboortedatum worden nooit naar de AI gestuurd.",
+      steps: ["Vacature lezen", "Je profiel analyseren", "Brief klaar"],
     },
     clean: {
       tag: "Propere resultaten",
@@ -476,7 +476,7 @@ const nl: Dict = {
       old: ["Zoeken op vijf verschillende sites", "Botsen op advertenties van uitzendkantoren", "Telkens dezelfde brief herschrijven", "Vergeten wie je moet opvolgen en wanneer"],
       newTag: "Met Springr",
       newTime: "± 2 min per sollicitatie",
-      new: ["Eén feed, gesorteerd voor jou", "Uitzendkantoren aangeduid en te verbergen", "Brief en cv aangepast door AI", "Automatische herinnering om op te volgen"],
+      new: ["Eén feed, gesorteerd voor jou", "Uitzendkantoren aangeduid en te verbergen", "Brief voorbereid voor elke vacature", "Automatische herinnering om op te volgen"],
     },
     pricing: {
       title: "Een eenvoudige prijs. Geen verplichtingen.",
@@ -488,7 +488,7 @@ const nl: Dict = {
           price: "0 €",
           per: "",
           desc: "Om te zoeken en te solliciteren",
-          items: ["Onbeperkte feed en matchscore", "Bedrijven die aanwerven", "Brieven en cv's met AI", "Sollicitaties en herinneringen"],
+          items: ["Onbeperkte feed en matchscore", "Bedrijven die aanwerven", "Brieven voorbereid voor elke vacature", "Sollicitaties en herinneringen"],
           cta: "Maak mijn profiel",
           soon: false,
         },
