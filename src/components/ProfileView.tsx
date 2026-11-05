@@ -8,6 +8,8 @@ import { store } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import { deleteAccount, signOut } from "@/lib/sync";
 import type { Lang, Profile } from "@/lib/types";
+import { removeCvFile, resetTemplate } from "@/lib/applyMail";
+import MailSettings from "./MailSettings";
 import { initials } from "./OfferCard";
 
 export default function ProfileView({ lang }: { lang: Lang }) {
@@ -40,12 +42,16 @@ export default function ProfileView({ lang }: { lang: Lang }) {
     if (!window.confirm(account ? t.auth.deleteConfirm : p.eraseConfirm)) return;
     if (account) await deleteAccount();
     else store.clearAll();
+    resetTemplate(lang);
+    await removeCvFile();
     setAccount(null);
     setProfile(null);
   }
 
   async function logout() {
     await signOut();
+    resetTemplate(lang);
+    await removeCvFile();
     setAccount(null);
     setProfile(null);
   }
@@ -141,6 +147,8 @@ export default function ProfileView({ lang }: { lang: Lang }) {
             </button>
           </div>
         </section>
+
+        <MailSettings t={t} lang={lang} />
 
         <section className="panel">
           <h3>{p.data}</h3>

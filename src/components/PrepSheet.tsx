@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { emailInOffer, mailtoLink, printAsPdf } from "@/lib/accessible";
+import { emailInOffer, printAsPdf } from "@/lib/accessible";
 import { cityLabel } from "@/lib/belgium";
 import type { Dict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
 import { toAiProfile, type Lang, type Offer, type Profile } from "@/lib/types";
+import EmailApply from "./EmailApply";
 
 type Kind = "letter" | "cv";
 
@@ -27,6 +28,7 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
   const [ai, setAi] = useState<Record<Kind, boolean | null>>({ letter: null, cv: null });
   const [busy, setBusy] = useState<Kind | null>(null);
   const [copied, setCopied] = useState(false);
+  const [mail, setMail] = useState(false);
 
   async function generate(kind: Kind) {
     setBusy(kind);
@@ -133,13 +135,12 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
           {offer.url && offer.url !== "#" && (
             <a className="btn" href={offer.url} target="_blank" rel="noreferrer">{p.openOffer}</a>
           )}
-          {emailInOffer(offer) && docs.letter && (
-            <a className="btn" href={mailtoLink(offer, docs.letter, `${t.burst.subject} ${offer.title}`, profile.phone)}>{t.burst.email}</a>
-          )}
+          {emailInOffer(offer) && <button className="btn dark" onClick={() => setMail(true)}>{t.applyMail.button}</button>}
           <button className="btn" onClick={() => save(false)}>{p.save}</button>
           <button className="btn brand" onClick={() => save(true)}>{p.sent}</button>
         </div>
       </div>
+      {mail && <EmailApply offer={offer} profile={profile} lang={lang} t={t} onClose={() => setMail(false)} onSent={onSaved} />}
     </div>
   );
 }

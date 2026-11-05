@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { emailInOffer, mailtoLink } from "@/lib/accessible";
+import { emailInOffer } from "@/lib/accessible";
 import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
 import { toAiProfile, type Application, type Lang, type Profile } from "@/lib/types";
+import EmailApply from "./EmailApply";
 
 /** Mode rafale : enchaîne les offres gardées. Chaque envoi reste fait et validé par la personne. */
 export default function Burst({ lang }: { lang: Lang }) {
@@ -19,6 +20,7 @@ export default function Burst({ lang }: { lang: Lang }) {
   const [letter, setLetter] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mail, setMail] = useState(false);
 
   useEffect(() => {
     setProfile(store.getProfile());
@@ -111,15 +113,27 @@ export default function Burst({ lang }: { lang: Lang }) {
 
           <div className="sheet-actions">
             <button className="btn dark" disabled={busy || !letter} onClick={copyAndOpen}>{copied ? r.copied : r.open}</button>
-            {emailInOffer(current.offer) && (
-              <a className="btn" href={mailtoLink(current.offer, letter, `${r.subject} ${current.offer.title}`, profile.phone)}>{r.email}</a>
-            )}
+            {emailInOffer(current.offer) && <button className="btn" onClick={() => setMail(true)}>{t.applyMail.button}</button>}
           </div>
           <div className="form-nav">
             <button className="btn" onClick={() => next(false)}>{r.skip}</button>
             <button className="btn brand" onClick={() => next(true)}>{r.sent}</button>
           </div>
         </div>
+      )}
+
+      {mail && current && profile && (
+        <EmailApply
+          offer={current.offer}
+          profile={profile}
+          lang={lang}
+          t={t}
+          onClose={() => setMail(false)}
+          onSent={() => {
+            setSent((n) => n + 1);
+            setIndex((i) => i + 1);
+          }}
+        />
       )}
     </main>
   );
