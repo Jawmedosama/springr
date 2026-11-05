@@ -99,6 +99,11 @@ function finish(results: PromiseSettledResult<Offer[]>[]): OffersResult {
   return { offers, agencies, demo: live.length === 0 };
 }
 
+/** Jooble et Careerjet, intérim compris : le tri se fait ensuite avec les filtres. */
+function aggregators(what: string, where: string, km: number): Promise<Offer[]>[] {
+  return [1, 2, 3].flatMap((page) => [fetchJooble(what, where, km, page), fetchCareerjet(what, where, page)]);
+}
+
 export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   const what = q.what?.trim() ?? "";
   const places = (q.where ?? "").split(",").map((c) => c.trim()).filter(Boolean).slice(0, 5);
@@ -111,6 +116,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
     const calls = q.provinces.slice(0, 5).flatMap((province) => [
       fetchForem({ what, contracts, province, all }),
       fetchAdzuna(what, 1, ADZUNA_PROVINCES[province], 30),
+      ...aggregators(what, ADZUNA_PROVINCES[province], 30),
     ]);
     return finish(await Promise.allSettled([...calls, fetchCareers({ what })]));
   }
@@ -121,6 +127,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
       fetchForem({ what, where, km, contracts, all }),
       fetchAdzuna(what, 1, where, km),
       fetchCareers({ what, where }),
+      ...aggregators(what, where, km),
     ]);
     return finish(await Promise.allSettled(calls));
   }
@@ -134,7 +141,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   ];
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
-  calls.push(fetchCareers({ what, where, region: q.region }), fetchJooble(what, where, km), fetchCareerjet(what, where));
+  calls.push(fetchCareers({ what, where, region: q.region }), ...aggregators(what, where, km));
   return finish(await Promise.allSettled(calls));
 }
 
