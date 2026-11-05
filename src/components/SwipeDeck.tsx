@@ -108,11 +108,14 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         }
         store.markSeen(current.offer.id);
         setSeen((s) => new Set([...s, current.offer.id]));
+        // Presque au bout de la pile : la suite se charge sans attendre.
+        if (ranked.length <= 10 && !more) void loadMore();
         setDrag(0);
         setLeaving(0);
       }, 220);
     },
-    [current, leaving, o.saved],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [current, leaving, o.saved, ranked.length, more],
   );
 
   useEffect(() => {
