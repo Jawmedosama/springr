@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { downloadFile, loadCvFile } from "@/lib/applyMail";
 import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
@@ -14,11 +15,13 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
   const t = getDict(lang);
   const a = t.apps;
   const [apps, setApps] = useState<Application[] | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [filter, setFilter] = useState<ApplicationStatus | "all" | "due">("all");
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     setApps(store.getApps());
+    loadCvFile().then((f) => setCvFile(f ?? null));
   }, []);
 
   function commit(next: Application[]) {
@@ -105,6 +108,7 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
                     {x.offer.url && x.offer.url !== "#" && (
                       <a className="btn small dark" href={x.offer.url} target="_blank" rel="noreferrer">{a.openAd} ↗</a>
                     )}
+                    {cvFile && <button className="btn small" onClick={() => downloadFile(cvFile)}>{t.prep.downloadCv}</button>}
                     <button className="btn small ghost" onClick={() => {
                       store.removeApp(x.offer.id);
                       setApps(store.getApps());

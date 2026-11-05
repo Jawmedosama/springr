@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { emailInOffer } from "@/lib/accessible";
-import { mailForOffer } from "@/lib/applyMail";
+import { downloadFile, loadCvFile, mailForOffer } from "@/lib/applyMail";
 import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
-import { toAiProfile, type Application, type Lang, type Profile } from "@/lib/types";
+import type { Application, Lang, Profile } from "@/lib/types";
 import EmailApply from "./EmailApply";
 
 /** Mode rafale : enchaîne les offres gardées. Chaque envoi reste fait et validé par la personne. */
@@ -18,58 +18,34 @@ export default function Burst({ lang }: { lang: Lang }) {
   const [queue, setQueue] = useState<Application[]>([]);
   const [index, setIndex] = useState(0);
   const [sent, setSent] = useState(0);
-  const [letter, setLetter] = useState("");
-  const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mail, setMail] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
 
   useEffect(() => {
     setProfile(store.getProfile());
     setQueue(store.getApps().filter((a) => a.status === "a_postuler"));
+    loadCvFile().then((f) => setCvFile(f ?? null));
   }, []);
 
   const current = queue[index];
 
-  const prepare = useCallback(
-    async (app: Application, p: Profile) => {
-      setCopied(false);
-      if (app.letter) {
-        setLetter(app.letter);
-        return;
-      }
-      setLetter("");
-      setBusy(true);
-      const res = await fetch("/api/letter", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ offer: app.offer, profile: toAiProfile(p), lang, spontaneous: app.spontaneous }),
-      })
-        .then((x) => x.json() as Promise<{ letter: string }>)
-        .catch(() => null);
-      setLetter(res?.letter ?? "");
-      setBusy(false);
-    },
-    [lang],
-  );
-
-  useEffect(() => {
-    if (current && profile) void prepare(current, profile);
-  }, [current, profile, prepare]);
-
   function next(done: boolean) {
     if (!current) return;
     if (done) {
-      store.saveOffer(current.offer, { status: "envoyee", letter, remindAt: inDays(FOLLOW_UP_DAYS) });
+      store.saveOffer(current.offer, { status: "envoyee", remindAt: inDays(FOLLOW_UP_DAYS) });
       setSent((n) => n + 1);
     }
+    setCopied(false);
     setIndex((i) => i + 1);
     window.scrollTo({ top: 0 });
   }
 
-  async function copyAndOpen() {
-    await navigator.clipboard?.writeText(letter).catch(() => undefined);
+  function copyMail() {
+    if (!current || !profile) return;
+    const m = mailForOffer(current.offer, profile, lang);
+    navigator.clipboard?.writeText(`${m.subject}\n\n${m.body}`);
     setCopied(true);
-    if (current.offer.url && current.offer.url !== "#") window.open(current.offer.url, "_blank", "noreferrer");
   }
 
   if (profile === undefined) return <main className="page" />;
@@ -104,27 +80,21 @@ export default function Burst({ lang }: { lang: Lang }) {
               <h2 style={{ margin: "10px 0 4px", fontSize: "1.4rem" }}>{current.offer.title}</h2>
               <p className="muted" style={{ margin: 0 }}>{current.offer.company} · {cityLabel(current.offer.city, lang)}</p>
             </div>
-            {busy ? (
-              <div className="skeleton" style={{ height: 240, borderRadius: 14 }} aria-label={t.prep.loading} />
-            ) : (
-              <textarea className="doc" rows={11} value={letter} onChange={(e) => setLetter(e.target.value)} />
+            {current.offer.url && current.offer.url !== "#" && (
+              <a className="btn dark block" href={current.offer.url} target="_blank" rel="noreferrer">{t.apps.openAd} ↗</a>
             )}
+            <div className="sheet-actions">
+              <button className="btn small" onClick={copyMail}>{copied ? t.prep.copied : t.applyMail.copyMail}</button>
+              {cvFile ? (
+                <button className="btn small" onClick={() => downloadFile(cvFile)}>{t.prep.downloadCv}</button>
+              ) : (
+                <Link className="btn small" href={`/${lang}/profil`}>{t.prep.addCv}</Link>
+              )}
+              {emailInOffer(current.offer) && <button className="btn small" onClick={() => setMail(true)}>{t.applyMail.button}</button>}
+            </div>
             <p className="muted small" style={{ margin: 0 }}>{r.review}</p>
           </section>
 
-          <div className="sheet-actions">
-            <button className="btn dark" disabled={busy || !letter} onClick={copyAndOpen}>{copied ? r.copied : r.open}</button>
-            <button
-              className="btn"
-              onClick={() => {
-                const m = mailForOffer(current.offer, profile, lang);
-                navigator.clipboard?.writeText(`${m.subject}\n\n${m.body}`);
-              }}
-            >
-              {t.applyMail.copyMail}
-            </button>
-            {emailInOffer(current.offer) && <button className="btn" onClick={() => setMail(true)}>{t.applyMail.button}</button>}
-          </div>
           <div className="form-nav">
             <button className="btn" onClick={() => next(false)}>{r.skip}</button>
             <button className="btn brand" onClick={() => next(true)}>{r.sent}</button>

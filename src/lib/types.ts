@@ -79,10 +79,3 @@ export interface Application {
   spontaneous?: boolean;
 }
 
-/** Ce qui est envoyé à l'IA : jamais l'adresse, l'e-mail ni la date de naissance. */
-export type AiProfile = Pick<Profile, "firstName" | "lastName" | "studyLevel" | "field" | "skills" | "languages" | "cvText">;
-
-export function toAiProfile(p: Profile): AiProfile {
-  const { firstName, lastName, studyLevel, field, skills, languages, cvText } = p;
-  return { firstName, lastName, studyLevel, field, skills, languages, cvText };
-}

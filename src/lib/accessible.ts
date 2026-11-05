@@ -26,17 +26,3 @@ export function hasLittleExperience(p: Profile): boolean {
 export function emailInOffer(o: Offer): string | null {
   return o.description.match(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i)?.[0] ?? null;
 }
-
-/** Ouvre le document dans une fenêtre d'impression : « Enregistrer en PDF » donne un fichier propre. */
-export function printAsPdf(title: string, text: string) {
-  const w = window.open("", "_blank");
-  if (!w) return;
-  w.document.title = title;
-  const style = w.document.createElement("style");
-  style.textContent =
-    "@page{margin:18mm}body{font:11pt/1.5 Georgia,'Times New Roman',serif;color:#111;white-space:pre-wrap;max-width:170mm;margin:0 auto}";
-  w.document.head.appendChild(style);
-  w.document.body.textContent = text;
-  w.focus();
-  w.print();
-}
