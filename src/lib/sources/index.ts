@@ -80,8 +80,19 @@ export interface OffersResult {
   agencies: Offer[];
 }
 
+const FLEXI = /\bflexi\b|\bflexi[- ]?jobs?\b/i;
+const STUDENT = /\b(jobiste|job[- ]étudiant|job[- ]etudiant|contrat étudiant|contrat etudiant|étudiante?s?|etudiante?s?|studentenjob|jobstudent|student)\b/i;
+
+/** Beaucoup de sources ne donnent pas le contrat : le texte de l'annonce le dit souvent. */
+function inferContract(o: Offer): Offer {
+  if (o.contract !== "nc") return o;
+  const text = `${o.title} ${o.description}`;
+  if (FLEXI.test(text)) return { ...o, contract: "flexi" };
+  return STUDENT.test(text) ? { ...o, contract: "etudiant" } : o;
+}
+
 function finish(results: PromiseSettledResult<Offer[]>[]): OffersResult {
-  const live = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  const live = results.flatMap((r) => (r.status === "fulfilled" ? r.value : [])).map(inferContract);
   const all = live.length === 0 ? SAMPLE_OFFERS : dedupe(live);
   const offers = all.filter((o) => !isIntermediary(o));
   const agencies = all.filter(isIntermediary).map((o) => ({ ...o, agency: true }));
