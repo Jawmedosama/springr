@@ -67,6 +67,13 @@ export function fillTemplate(text: string, offer: Offer, profile: Profile): stri
     .replaceAll("{nom}", profile.lastName);
 }
 
+/** Texte prêt à coller pour une offre : objet, message et téléphone. */
+export function mailForOffer(offer: Offer, profile: Profile, lang: Lang): MailTemplate {
+  const tpl = loadTemplate(lang);
+  const phone = profile.phone ? `\n${profile.phone}` : "";
+  return { subject: fillTemplate(tpl.subject, offer, profile), body: fillTemplate(tpl.body, offer, profile) + phone };
+}
+
 /* Le PDF du CV reste dans le navigateur (IndexedDB) : il n'est envoyé qu'au moment d'une candidature. */
 
 const DB = "springr";

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { emailInOffer } from "@/lib/accessible";
+import { mailForOffer } from "@/lib/applyMail";
 import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
@@ -113,6 +114,15 @@ export default function Burst({ lang }: { lang: Lang }) {
 
           <div className="sheet-actions">
             <button className="btn dark" disabled={busy || !letter} onClick={copyAndOpen}>{copied ? r.copied : r.open}</button>
+            <button
+              className="btn"
+              onClick={() => {
+                const m = mailForOffer(current.offer, profile, lang);
+                navigator.clipboard?.writeText(`${m.subject}\n\n${m.body}`);
+              }}
+            >
+              {t.applyMail.copyMail}
+            </button>
             {emailInOffer(current.offer) && <button className="btn" onClick={() => setMail(true)}>{t.applyMail.button}</button>}
           </div>
           <div className="form-nav">

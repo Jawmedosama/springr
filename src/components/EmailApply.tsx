@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { emailInOffer } from "@/lib/accessible";
-import { downloadFile, fillTemplate, loadCvFile, loadTemplate } from "@/lib/applyMail";
+import { downloadFile, loadCvFile, mailForOffer } from "@/lib/applyMail";
 import type { Dict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
-import { getSupabase } from "@/lib/supabase";
 import type { Lang, Offer, Profile } from "@/lib/types";
 
 interface Props {
@@ -17,26 +16,21 @@ interface Props {
   onSent?: () => void;
 }
 
-/** Aperçu de l'e-mail : rien ne part sans un clic sur Envoyer. */
+/** Aperçu de l'e-mail : c'est la personne qui l'envoie depuis sa propre messagerie. */
 export default function EmailApply({ offer, profile, lang, t, onClose, onSent }: Props) {
   const m = t.applyMail;
   const to = emailInOffer(offer) ?? "";
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [cv, setCv] = useState<File | null | undefined>(undefined);
-  const [direct, setDirect] = useState(false);
-  const [state, setState] = useState<"idle" | "busy" | "opened" | "error">("idle");
+  const [state, setState] = useState<"idle" | "opened">("idle");
+  const [copied, setCopied] = useState("");
 
   useEffect(() => {
-    const tpl = loadTemplate(lang);
-    setSubject(fillTemplate(tpl.subject, offer, profile));
-    const signature = profile.phone ? `\n${profile.phone}` : "";
-    setBody(fillTemplate(tpl.body, offer, profile) + signature);
+    const mail = mailForOffer(offer, profile, lang);
+    setSubject(mail.subject);
+    setBody(mail.body);
     loadCvFile().then((f) => setCv(f ?? null));
-    fetch("/api/apply-email")
-      .then((r) => r.json() as Promise<{ enabled: boolean }>)
-      .then((d) => setDirect(d.enabled))
-      .catch(() => setDirect(false));
   }, [lang, offer, profile]);
 
   function markSent() {
@@ -45,23 +39,10 @@ export default function EmailApply({ offer, profile, lang, t, onClose, onSent }:
     onClose();
   }
 
-  async function send() {
-    if (!cv) return;
-    setState("busy");
-    const { data } = (await getSupabase()?.auth.getSession()) ?? { data: { session: null } };
-    const form = new FormData();
-    form.set("to", to);
-    form.set("subject", subject);
-    form.set("body", body);
-    form.set("offerId", offer.id);
-    form.set("cv", cv);
-    const res = await fetch("/api/apply-email", {
-      method: "POST",
-      headers: { authorization: `Bearer ${data.session?.access_token ?? ""}` },
-      body: form,
-    }).catch(() => null);
-    if (res?.ok) markSent();
-    else setState("error");
+  function copy(label: string, text: string) {
+    navigator.clipboard?.writeText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(""), 1500);
   }
 
   const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -82,12 +63,11 @@ export default function EmailApply({ offer, profile, lang, t, onClose, onSent }:
         <p style={{ margin: 0 }}>
           {m.attachment} : {cv ? <b>{cv.name}</b> : <span className="error">{m.noCv}</span>}
         </p>
-        {state === "error" && <p className="error" role="alert">{m.failed}</p>}
-        {direct ? (
-          <button className="btn brand block" disabled={!cv || state === "busy"} onClick={send}>
-            {state === "busy" ? m.sending : m.send}
-          </button>
-        ) : state === "opened" ? (
+        <div className="sheet-actions">
+          <button className="btn small" onClick={() => copy("subject", subject)}>{copied === "subject" ? t.prep.copied : m.copySubject}</button>
+          <button className="btn small" onClick={() => copy("body", body)}>{copied === "body" ? t.prep.copied : m.copyBody}</button>
+        </div>
+        {state === "opened" ? (
           <>
             <p className="banner">{m.attachHint}</p>
             <button className="btn brand block" onClick={markSent}>{m.confirm}</button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { emailInOffer, printAsPdf } from "@/lib/accessible";
+import { mailForOffer } from "@/lib/applyMail";
 import { cityLabel } from "@/lib/belgium";
 import type { Dict } from "@/lib/i18n";
 import { FOLLOW_UP_DAYS, inDays, store } from "@/lib/store";
@@ -29,6 +30,7 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
   const [busy, setBusy] = useState<Kind | null>(null);
   const [copied, setCopied] = useState(false);
   const [mail, setMail] = useState(false);
+  const [mailCopied, setMailCopied] = useState(false);
 
   async function generate(kind: Kind) {
     setBusy(kind);
@@ -68,6 +70,13 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
     });
     onSaved?.();
     onClose();
+  }
+
+  function copyMail() {
+    const m = mailForOffer(offer, profile, lang);
+    navigator.clipboard?.writeText(`${m.subject}\n\n${m.body}`);
+    setMailCopied(true);
+    setTimeout(() => setMailCopied(false), 1500);
   }
 
   function download() {
@@ -128,6 +137,7 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
             {copied ? p.copied : p.copy}
           </button>
           <button className="btn small" disabled={!text} onClick={download}>{p.download}</button>
+          <button className="btn small" onClick={copyMail}>{mailCopied ? p.copied : t.applyMail.copyMail}</button>
           <button className="btn small" disabled={!text} onClick={() => printAsPdf(`${tab === "letter" ? p.letter : p.cv} - ${profile.firstName} ${profile.lastName}`, text)}>{p.pdf}</button>
         </div>
 
