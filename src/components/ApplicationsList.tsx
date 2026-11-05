@@ -106,6 +106,9 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
                     <label className="small">{a.remind}
                       <input type="date" value={x.remindAt ?? ""} onChange={(e) => update(x.offer.id, { remindAt: e.target.value })} />
                     </label>
+                    {x.offer.url && x.offer.url !== "#" && (
+                      <a className="btn small dark" href={x.offer.url} target="_blank" rel="noreferrer">{a.openAd} ↗</a>
+                    )}
                     {profile && <button className="btn small" onClick={() => setPrep(x)}>{a.prepare}</button>}
                     <button className="btn small ghost" onClick={() => {
                       store.removeApp(x.offer.id);
