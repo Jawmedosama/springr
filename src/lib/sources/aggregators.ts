@@ -35,7 +35,7 @@ export async function fetchJooble(what = "", where = "", km = 30, page = 1): Pro
   const res = await fetch(`https://be.jooble.org/api/${key}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ keywords: what, location: where || "Belgique", radius: String(km), page: String(page) }),
+    body: JSON.stringify({ keywords: what, location: where || "Belgique", radius: String(km), page: String(page), ResultOnPage: "100" }),
     next: { revalidate: 3600 },
   }).catch(() => null);
   if (!res || !res.ok) return [];
@@ -74,7 +74,7 @@ export async function fetchCareerjet(what = "", where = "", page = 1): Promise<O
     keywords: what,
     location: where,
     affid,
-    pagesize: "50",
+    pagesize: "99",
     page: String(page),
     user_ip: "127.0.0.1",
     user_agent: "Springr",
