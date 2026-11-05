@@ -206,6 +206,7 @@ const fr = {
     all: "Tout",
     easy: "Offres accessibles",
     more: "Charger plus d'offres",
+    allSeen: "Tu as vu toutes les offres qui correspondent.",
     left: "offres restantes",
     agency: "Agence",
     showAgencies: "Afficher aussi les agences",
@@ -276,7 +277,7 @@ const fr = {
   },
   filters: {
     title: "Filtres",
-    matching: "offres correspondent",
+    matching: "offres correspondent à tes filtres",
     hiddenFr: "{n} masquées par « français seulement »",
     reset: "Tout effacer",
     remove: "Retirer",
@@ -585,6 +586,7 @@ const nl: Dict = {
     all: "Alles",
     easy: "Toegankelijke vacatures",
     more: "Meer vacatures laden",
+    allSeen: "Je hebt alle passende vacatures gezien.",
     left: "vacatures over",
     agency: "Kantoor",
     showAgencies: "Ook uitzendkantoren tonen",
@@ -655,7 +657,7 @@ const nl: Dict = {
   },
   filters: {
     title: "Filters",
-    matching: "vacatures komen overeen",
+    matching: "vacatures passen bij je filters",
     hiddenFr: "{n} verborgen door « enkel Frans »",
     reset: "Alles wissen",
     remove: "Verwijderen",

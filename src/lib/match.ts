@@ -1,5 +1,5 @@
 import { hasLittleExperience, welcomesBeginners } from "./accessible";
-import type { Lang, Offer, Profile } from "./types";
+import type { Lang, MatchProfile, Offer } from "./types";
 
 export interface MatchResult {
   score: number;
@@ -26,7 +26,7 @@ const PROFILE_LANG_CODE: Record<string, string> = {
  * Score de correspondance simple et explicable (0 à 100).
  * Il sera complété par un score IA, mais reste la base : rapide, gratuit et transparent.
  */
-export function matchOffer(offer: Offer, profile: Profile, ui: Lang): MatchResult {
+export function matchOffer(offer: Offer, profile: MatchProfile, ui: Lang): MatchResult {
   const reasons: string[] = [];
   const warnings: string[] = [];
   const t = (fr: string, nl: string) => (ui === "nl" ? nl : fr);

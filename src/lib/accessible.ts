@@ -1,4 +1,4 @@
-import type { Offer, Profile } from "./types";
+import type { MatchProfile, Offer } from "./types";
 
 const FOR_BEGINNERS =
   /(débutant|debutant|sans expérience|sans experience|pas d'expérience|première expérience|premier emploi|junior|starter|geen ervaring|zonder ervaring|beginner|étudiant|etudiant|student|flexi|polyvalent|formation assurée|opleiding voorzien)/i;
@@ -18,7 +18,7 @@ export function isAccessible(o: Offer): boolean {
 /** Vrai quand l'annonce s'adresse clairement aux débutants. */
 export const welcomesBeginners = isAccessible;
 
-export function hasLittleExperience(p: Profile): boolean {
+export function hasLittleExperience(p: MatchProfile): boolean {
   return (p.cvText ?? "").length < 400;
 }
 

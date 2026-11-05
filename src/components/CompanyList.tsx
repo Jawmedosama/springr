@@ -52,7 +52,7 @@ export default function CompanyList({ lang }: { lang: Lang }) {
   useEffect(() => {
     if (region === null) return;
     setOffers(null);
-    const qs = new URLSearchParams({ scope: "companies" });
+    const qs = new URLSearchParams();
     if (region !== "all") qs.set("region", region);
     fetch(`/api/offers?${qs}`)
       .then((r) => r.json())

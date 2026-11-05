@@ -78,24 +78,19 @@ export function activeCount(f: Filters): number {
   return f.contracts.length + f.regions.length + f.provinces.length + f.cities.length + f.hours.length + [f.allBelgium || null, f.lang, f.days, f.km, f.easy || null, f.hideAgencies || null].filter(Boolean).length;
 }
 
-/** Ce qui demande une nouvelle recherche, et non un simple tri des offres déjà chargées. */
-export function searchKey(f: Filters): string {
-  return JSON.stringify([f.km, f.contracts, f.regions, f.provinces, f.cities, f.allBelgium]);
-}
-
 /** Le lieu choisi dans les filtres remplace la ville du profil, sans modifier le profil. */
-export function searchParams(what: string, where: string, f: Filters, profileKm?: number): URLSearchParams {
-  const qs = new URLSearchParams();
+export function feedQuery(what: string, where: string, f: Filters, profileKm?: number) {
   const place = f.allBelgium || f.provinces.length ? "" : f.cities.length ? f.cities.join(",") : where.trim();
-  const km = f.km ?? profileKm;
   const real = f.regions.filter((r): r is Region => r !== "germanophone");
-  if (what.trim()) qs.set("what", what.trim());
-  if (place) qs.set("where", place);
-  if (km) qs.set("km", String(km));
-  if (f.contracts.length) qs.set("contracts", f.contracts.join(","));
-  if (f.provinces.length) qs.set("provinces", f.provinces.join(","));
-  if (real.length === 1 && !place) qs.set("region", real[0]);
-  return qs;
+  return {
+    what: what.trim(),
+    where: place,
+    km: f.km ?? profileKm,
+    contracts: f.contracts,
+    provinces: f.provinces,
+    region: real.length === 1 && !place ? real[0] : undefined,
+    filters: f,
+  };
 }
 
 const KEY = "springr.filters";

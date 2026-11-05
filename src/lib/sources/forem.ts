@@ -152,6 +152,8 @@ export interface ForemQuery {
   province?: Province;
   /** Page de résultats, à partir de 0. */
   page?: number;
+  /** Toutes les offres trouvées, sans découpage (le classement se fait ensuite). */
+  all?: boolean;
 }
 
 const plain = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -210,6 +212,7 @@ function searchSnapshot(records: Rec[], q: ForemQuery): Offer[] {
     }
     return true;
   });
+  if (q.all) return found.map(toOffer);
   const page = q.page ?? 0;
   return [
     ...found.filter((r) => !isAgency(r)).slice(page * 200, page * 200 + 200),

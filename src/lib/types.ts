@@ -60,6 +60,9 @@ export interface Profile {
   createdAt: string;
 }
 
+/** Ce qui sert à calculer le score : ni adresse, ni e-mail, ni date de naissance. */
+export type MatchProfile = Pick<Profile, "contracts" | "region" | "skills" | "field" | "languages" | "cvText">;
+
 export type ApplicationStatus =
   | "a_postuler"
   | "envoyee"

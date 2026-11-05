@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cityLabel } from "@/lib/belgium";
-import { activeCount, loadFilters, matchesFilters, NO_FILTERS, saveFilters, searchKey, searchParams, type Filters } from "@/lib/filters";
+import { activeCount, feedQuery, loadFilters, NO_FILTERS, saveFilters, type Filters } from "@/lib/filters";
 import { getDict } from "@/lib/i18n";
 import { matchOffer, type MatchResult } from "@/lib/match";
 import { store } from "@/lib/store";
@@ -27,7 +27,6 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [offers, setOffers] = useState<Offer[] | null>(null);
   const [demo, setDemo] = useState(false);
-  const [agencies, setAgencies] = useState<Offer[]>([]);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const [what, setWhat] = useState("");
   const [where, setWhere] = useState("");
@@ -42,21 +41,50 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const latest = useRef(0);
   const [page, setPage] = useState(0);
   const [more, setMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [hiddenByFrench, setHiddenByFrench] = useState(0);
 
-  const load = useCallback((w: string, c: string, f: Filters, km?: number) => {
-    setOffers(null);
-    setPage(0);
-    const id = ++latest.current;
-    fetch(`/api/offers?${searchParams(w, c, f, km)}`)
-      .then((r) => r.json())
-      .then((d: { offers: Offer[]; agencies: Offer[]; demo: boolean }) => {
-        if (id !== latest.current) return;
-        setOffers(d.offers);
-        setAgencies(d.agencies ?? []);
-        setDemo(d.demo);
-      })
-      .catch(() => setOffers([]));
-  }, []);
+  const fetchPage = useCallback(
+    (w: string, c: string, f: Filters, p: Profile | null, n: number) =>
+      fetch("/api/feed", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...feedQuery(w, c, f, p?.mobilityKm),
+          lang,
+          page: n,
+          profile: p && {
+            contracts: p.contracts,
+            region: p.region,
+            skills: p.skills,
+            field: p.field,
+            languages: p.languages,
+            experienced: (p.cvText ?? "").length >= 400,
+          },
+        }),
+      }).then((r) => r.json() as Promise<{ offers: Offer[]; total: number; hiddenByFrench: number; hasMore: boolean; demo: boolean }>),
+    [lang],
+  );
+
+  const load = useCallback(
+    (w: string, c: string, f: Filters, p: Profile | null) => {
+      setOffers(null);
+      setPage(0);
+      const id = ++latest.current;
+      fetchPage(w, c, f, p, 0)
+        .then((d) => {
+          if (id !== latest.current) return;
+          setOffers(d.offers);
+          setTotal(d.total);
+          setHiddenByFrench(d.hiddenByFrench);
+          setHasMore(d.hasMore);
+          setDemo(d.demo);
+        })
+        .catch(() => setOffers([]));
+    },
+    [fetchPage],
+  );
 
   useEffect(() => {
     const p = store.getProfile();
@@ -68,31 +96,14 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     setWhere(c);
     const f = loadFilters();
     setFilters(f);
-    load(w, c, f, p?.mobilityKm);
+    load(w, c, f, p);
   }, [load]);
 
-  const ranked: Ranked[] = useMemo(() => {
-    if (!offers) return [];
-    const list = [...offers, ...agencies]
-      .filter((x) => !seen.has(x.id))
-      .filter((x) => matchesFilters(x, filters))
-      .map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null }));
-    return profile
-      ? list.sort(
-          (a, b) =>
-            (b.m?.score ?? 0) - (a.m?.score ?? 0) ||
-            Number(a.offer.agency ?? false) - Number(b.offer.agency ?? false) ||
-            b.offer.publishedAt.localeCompare(a.offer.publishedAt),
-        )
-      : list.sort((a, b) => b.offer.publishedAt.localeCompare(a.offer.publishedAt));
-  }, [offers, agencies, filters, profile, seen, lang]);
-
-  /** Offres retirées par « français seulement », pour voir ce que ce filtre coûte. */
-  const hiddenByFrench = useMemo(() => {
-    if (filters.lang !== "fr" || !offers) return 0;
-    const others = { ...filters, lang: null };
-    return [...offers, ...agencies].filter((x) => !seen.has(x.id) && matchesFilters(x, others)).length - ranked.length;
-  }, [filters, offers, agencies, seen, ranked.length]);
+  // Le serveur a déjà filtré et classé toutes les offres : on garde son ordre.
+  const ranked: Ranked[] = useMemo(
+    () => (offers ?? []).filter((x) => !seen.has(x.id)).map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null })),
+    [offers, profile, seen, lang],
+  );
 
   const current = ranked[0];
 
@@ -108,14 +119,11 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         }
         store.markSeen(current.offer.id);
         setSeen((s) => new Set([...s, current.offer.id]));
-        // Presque au bout de la pile : la suite se charge sans attendre.
-        if (ranked.length <= 10 && !more) void loadMore();
         setDrag(0);
         setLeaving(0);
       }, 220);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [current, leaving, o.saved, ranked.length, more],
+    [current, leaving, o.saved],
   );
 
   useEffect(() => {
@@ -128,34 +136,36 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [decide, detail, prep]);
 
-  /** Ajoute la page suivante aux offres déjà chargées. */
-  async function loadMore() {
+  /** Ajoute la page suivante, dans l'ordre du classement. */
+  const loadMore = useCallback(async () => {
     const next = page + 1;
     const id = latest.current;
     setMore(true);
-    const qs = searchParams(what, where, filters, profile?.mobilityKm);
-    qs.set("page", String(next));
-    const d = (await fetch(`/api/offers?${qs}`).then((r) => r.json()).catch(() => null)) as { offers: Offer[]; agencies: Offer[]; demo: boolean } | null;
+    const d = await fetchPage(what, where, filters, profile ?? null, next).catch(() => null);
     setMore(false);
-    if (!d || d.demo || id !== latest.current) return;
-    const add = (list: Offer[], extra: Offer[]) => {
-      const ids = new Set(list.map((x) => x.id));
-      return [...list, ...extra.filter((x) => !ids.has(x.id))];
-    };
-    setOffers((list) => add(list ?? [], d.offers));
-    setAgencies((list) => add(list, d.agencies ?? []));
+    if (!d || id !== latest.current) return;
+    setOffers((list) => {
+      const ids = new Set((list ?? []).map((x) => x.id));
+      return [...(list ?? []), ...d.offers.filter((x) => !ids.has(x.id))];
+    });
+    setHasMore(d.hasMore);
     setPage(next);
-  }
+  }, [page, fetchPage, what, where, filters, profile]);
+
+  // Il reste peu de cartes : la suite arrive toute seule, jusqu'à la dernière offre.
+  useEffect(() => {
+    if (offers && hasMore && !more && ranked.length <= 5) void loadMore();
+  }, [offers, hasMore, more, ranked.length, loadMore]);
 
   function changeFilters(next: Filters) {
     setFilters(next);
     saveFilters(next);
-    if (searchKey(next) !== searchKey(filters)) load(what, where, next, profile?.mobilityKm);
+    load(what, where, next, profile ?? null);
   }
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    load(what, where, filters, profile?.mobilityKm);
+    load(what, where, filters, profile ?? null);
   }
 
   function openPrep(offer: Offer) {
@@ -187,7 +197,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           <button className="btn dark" type="submit">{o.search}</button>
         </form>
 
-        <FilterPanel t={t} filters={filters} count={ranked.length} hiddenByFrench={hiddenByFrench} onChange={changeFilters} />
+        <FilterPanel t={t} filters={filters} count={total} hiddenByFrench={hiddenByFrench} onChange={changeFilters} />
 
         {demo && <p className="banner">{o.demo}</p>}
         {profile === null && (
@@ -198,7 +208,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           <div className="stack"><div className="skeleton" style={{ position: "absolute", inset: 0 }} aria-label={o.loading} /></div>
         ) : !current ? (
           <div className="empty">
-            <p style={{ margin: 0 }}>{activeCount(filters) > 0 ? t.filters.none : o.empty}</p>
+            <p style={{ margin: 0 }}>{more || hasMore ? o.loading : total === 0 ? (activeCount(filters) > 0 ? t.filters.none : o.empty) : o.allSeen}</p>
             {seen.size > 0 && (
               <button className="btn" onClick={() => { store.resetSeen(); setSeen(new Set()); }}>{o.reset}</button>
             )}
@@ -269,7 +279,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         )}
       </div>
 
-      {offers !== null && (
+      {offers !== null && hasMore && (
         <button className="btn block" style={{ marginTop: 16 }} disabled={more} onClick={loadMore}>{more ? o.loading : o.more}</button>
       )}
 
