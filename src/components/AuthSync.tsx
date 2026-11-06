@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { getSupabase } from "@/lib/supabase";
-import { attach, detach } from "@/lib/sync";
 
 /** Branche la synchronisation dès qu'une session existe. Ne rend rien. */
 export default function AuthSync() {
   useEffect(() => {
+    let stop = () => {};
+    let cancelled = false;
+    const run = async () => {
+    const [{ getSupabase }, { attach, detach }] = await Promise.all([import("@/lib/supabase"), import("@/lib/sync")]);
     const sb = getSupabase();
-    if (!sb) return;
+    if (!sb || cancelled) return;
     let current: string | null = null;
     let mail = "";
     const start = async (id?: string, email?: string) => {
@@ -32,9 +34,16 @@ export default function AuthSync() {
       // Hors du rappel : un appel Supabase à l'intérieur peut bloquer la session.
       setTimeout(() => void start(session?.user.id, session?.user.email));
     });
-    return () => {
+    stop = () => {
       document.removeEventListener("visibilitychange", refresh);
       data.subscription.unsubscribe();
+    };
+    };
+    const timer = setTimeout(() => void run(), 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      stop();
     };
   }, []);
   return null;

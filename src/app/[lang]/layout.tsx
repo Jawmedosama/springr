@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 import AuthSync from "@/components/AuthSync";
+import ClientErrors from "@/components/ClientErrors";
 import Header, { Logo } from "@/components/Header";
 import { getDict, isLang, LANGS } from "@/lib/i18n";
 import "../globals.css";
@@ -38,6 +39,7 @@ export default async function LangLayout({
     <html lang={lang} className={`${display.variable} ${body.variable}`}>
       <body>
         <AuthSync />
+        <ClientErrors />
         <Header lang={lang} t={t} />
         {children}
         <footer className="foot">
@@ -56,6 +58,13 @@ export default async function LangLayout({
                 <Link href={`/${lang}/offres`}>{t.nav.offers}</Link>
                 <Link href={`/${lang}/entreprises`}>{t.nav.companies}</Link>
                 <Link href={`/${lang}/candidatures`}>{t.nav.applications}</Link>
+              </div>
+              <div>
+                <b>{t.footer.legal}</b>
+                <Link href={`/${lang}/legal/mentions`}>{t.footer.mentions}</Link>
+                <Link href={`/${lang}/legal/confidentialite`}>{t.footer.privacy}</Link>
+                <Link href={`/${lang}/legal/conditions`}>{t.footer.terms}</Link>
+                <Link href={`/${lang}/legal/cookies`}>{t.footer.cookies}</Link>
               </div>
               <div>
                 <b>{t.footer.help}</b>

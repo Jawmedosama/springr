@@ -44,10 +44,18 @@ interface Raw {
   belgian?: boolean;
 }
 
+const memory = new Map<string, { at: number; data: unknown }>();
+const SIX_HOURS = 6 * 3600 * 1000;
+
+/** Mémoire de l'instance : certaines réponses dépassent les 2 Mo du cache de Next. */
 async function get<T>(url: string): Promise<T | null> {
-  const res = await fetch(url, { next: { revalidate: 21600 } }).catch(() => null);
+  const hit = memory.get(url);
+  if (hit && Date.now() - hit.at < SIX_HOURS) return hit.data as T;
+  const res = await fetch(url, { cache: "no-store" }).catch(() => null);
   if (!res || !res.ok) return null;
-  return (await res.json().catch(() => null)) as T | null;
+  const data = (await res.json().catch(() => null)) as T | null;
+  if (data) memory.set(url, { at: Date.now(), data });
+  return data;
 }
 
 async function greenhouse(slug: string): Promise<Raw[]> {

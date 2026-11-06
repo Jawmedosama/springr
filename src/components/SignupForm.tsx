@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CvFields } from "@/lib/cvParse";
 import { getDict } from "@/lib/i18n";
@@ -179,6 +180,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
               <input type="checkbox" checked={f.consent} onChange={(e) => set("consent", e.target.checked)} />
               {s.consent}
             </label>
+            <Link className="small" href={`/${lang}/legal/confidentialite`} target="_blank">{s.readLegal}</Link>
           </section>
         )}
 

@@ -32,7 +32,7 @@ interface JoobleJob {
 export async function fetchJooble(what = "", where = "", km = 30, page = 1): Promise<Offer[]> {
   const key = process.env.JOOBLE_API_KEY;
   if (!key) return [];
-  const res = await fetch(`https://be.jooble.org/api/${key}`, {
+  const res = await fetch(`https://jooble.org/api/${key}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ keywords: what, location: where || "Belgique", radius: String(km), page: String(page), ResultOnPage: "100" }),
@@ -84,7 +84,10 @@ export async function fetchCareerjet(what = "", where = "", page = 1): Promise<O
     url: "https://springr-two.vercel.app",
   });
   const res = await fetch(`https://search.api.careerjet.net/v4/query?${params}`, {
-    headers: { authorization: `Basic ${Buffer.from(`${affid}:`).toString("base64")}` },
+    headers: {
+      authorization: `Basic ${Buffer.from(`${affid}:`).toString("base64")}`,
+      referer: "https://springr-two.vercel.app/",
+    },
     next: { revalidate: 3600 },
   }).catch(() => null);
   if (!res || !res.ok) {

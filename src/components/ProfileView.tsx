@@ -7,7 +7,7 @@ import { store } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import { deleteAccount, signOut } from "@/lib/sync";
 import type { Lang, Profile } from "@/lib/types";
-import { removeCvFile, resetTemplate } from "@/lib/applyMail";
+import { loadTemplate, removeCvFile, resetTemplate } from "@/lib/applyMail";
 import MailSettings from "./MailSettings";
 import { initials } from "./OfferCard";
 
@@ -45,6 +45,16 @@ export default function ProfileView({ lang }: { lang: Lang }) {
     await removeCvFile();
     setAccount(null);
     setProfile(null);
+  }
+
+  function exportData() {
+    const data = { profile: store.getProfile(), applications: store.getApps(), seenOffers: [...store.getSeen()], mail: loadTemplate(lang) };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mes-donnees.json";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function logout() {
@@ -123,7 +133,10 @@ export default function ProfileView({ lang }: { lang: Lang }) {
         <section className="panel">
           <h3>{p.data}</h3>
           <p className="muted" style={{ margin: 0 }}>{account ? t.auth.dataText : p.dataText}</p>
-          <div><button className="btn small" onClick={erase} style={{ color: "var(--bad)" }}>{p.erase}</button></div>
+          <div className="sheet-actions">
+            <button className="btn small" onClick={exportData}>{p.export}</button>
+            <button className="btn small" onClick={erase} style={{ color: "var(--bad)" }}>{p.erase}</button>
+          </div>
         </section>
       </div>
     </main>
