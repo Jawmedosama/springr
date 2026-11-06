@@ -10,7 +10,7 @@ import { store } from "@/lib/store";
 
 import { getSupabase } from "@/lib/supabase";
 import type { ContractType, Lang, Region } from "@/lib/types";
-import CodeForm from "./CodeForm";
+import AuthForm from "./AuthForm";
 
 export type StartMode = "choice" | "login" | "signup" | "guest";
 
@@ -23,8 +23,6 @@ export default function StartDialog({ lang, mode = "choice", onClose }: { lang: 
   const s = t.start;
   const box = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<StartMode>(mode);
-  const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "busy" | "sent" | "error">("idle");
   const [city, setCity] = useState("");
   const [region, setRegion] = useState<Region | null>(null);
   const [contracts, setContracts] = useState<ContractType[]>([]);
@@ -56,18 +54,6 @@ export default function StartDialog({ lang, mode = "choice", onClose }: { lang: 
   useEffect(() => {
     box.current?.querySelector<HTMLElement>("input, .start-choice, button:not(.close)")?.focus();
   }, [view]);
-
-  async function sendLink(e: React.FormEvent) {
-    e.preventDefault();
-    const sb = getSupabase();
-    if (!sb || !email.trim()) return;
-    setState("busy");
-    const { error } = await sb.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/${lang}/profil` },
-    });
-    setState(error ? "error" : "sent");
-  }
 
   function startGuest(e: React.FormEvent) {
     e.preventDefault();
@@ -105,18 +91,8 @@ export default function StartDialog({ lang, mode = "choice", onClose }: { lang: 
               <p className="banner">{t.auth.unavailable}</p>
               <Link className="btn dark block" href={`/${lang}/inscription`} onClick={onClose}>{t.profile.create}</Link>
             </>
-          ) : state === "sent" ? (
-            <CodeForm email={email} lang={lang} />
           ) : (
-            <form onSubmit={sendLink} style={{ display: "grid", gap: 12 }}>
-              <p className="muted" style={{ margin: 0 }}>{view === "login" ? s.loginText : s.signupText}</p>
-              <label>{t.auth.email}
-                <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </label>
-              {state === "error" && <p className="error" role="alert" style={{ margin: 0 }}>{t.auth.error}</p>}
-              <button className="btn dark block" type="submit" disabled={state === "busy"}>{state === "busy" ? t.auth.sending : t.auth.send}</button>
-              <p className="muted small" style={{ margin: 0 }}>{s.sameBrowser}</p>
-            </form>
+            <AuthForm lang={lang} mode={view === "login" ? "login" : "signup"} onMode={setView} />
           )
         )}
 
@@ -144,7 +120,7 @@ export default function StartDialog({ lang, mode = "choice", onClose }: { lang: 
           </form>
         )}
 
-        {view !== "choice" && mode === "choice" && state !== "sent" && (
+        {view !== "choice" && mode === "choice" && (
           <button className="link-btn" onClick={() => setView("choice")}>{t.signup.back}</button>
         )}
       </div>

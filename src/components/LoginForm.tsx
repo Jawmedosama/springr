@@ -2,49 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { getDict } from "@/lib/i18n";
-import { store } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import type { Lang } from "@/lib/types";
-import CodeForm from "./CodeForm";
+import AuthForm, { type AuthMode } from "./AuthForm";
 
 export default function LoginForm({ lang }: { lang: Lang }) {
-  const t = getDict(lang).auth;
-  const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "busy" | "sent" | "error">("idle");
+  const t = getDict(lang);
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [confirmed, setConfirmed] = useState(false);
 
-  useEffect(() => setEmail(store.getProfile()?.email ?? ""), []);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const sb = getSupabase();
-    if (!sb || !email.trim()) return;
-    setState("busy");
-    const { error } = await sb.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/${lang}/profil` },
+  useEffect(() => {
+    setConfirmed(new URLSearchParams(window.location.search).has("confirmed"));
+    // Le lien de confirmation connecte aussi : on passe alors directement au profil.
+    getSupabase()?.auth.getSession().then(({ data }) => {
+      if (data.session) window.location.href = `/${lang}/profil`;
     });
-    setState(error ? "error" : "sent");
-  }
+  }, [lang]);
 
   return (
     <main className="page">
       <div className="page-head">
-        <h1>{t.title}</h1>
-        <p>{t.lead}</p>
+        <h1>{t.auth.title}</h1>
+        <p>{t.auth.lead}</p>
       </div>
       {!getSupabase() ? (
-        <p className="banner">{t.unavailable}</p>
-      ) : state === "sent" ? (
-        <div className="panel"><CodeForm email={email} lang={lang} /></div>
+        <p className="banner">{t.auth.unavailable}</p>
       ) : (
-        <form className="panel" onSubmit={submit}>
-          <label>{t.email}
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-          </label>
-          {state === "error" && <p className="error" role="alert">{t.error}</p>}
-          <button className="btn dark" type="submit" disabled={state === "busy"}>{state === "busy" ? t.sending : t.send}</button>
-          <p className="muted small" style={{ margin: 0 }}>{t.note}</p>
-        </form>
+        <div className="panel">
+          {confirmed && <p className="banner ok" style={{ margin: 0 }}>{t.pw.confirmed}</p>}
+          <AuthForm lang={lang} mode={mode} onMode={setMode} />
+          <p className="muted small" style={{ margin: 0 }}>{t.auth.note}</p>
+        </div>
       )}
     </main>
   );

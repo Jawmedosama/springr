@@ -107,7 +107,10 @@ export default function ProfileView({ lang }: { lang: Lang }) {
             {account ? (
               <>
                 <p className="muted" style={{ margin: 0 }}>{t.auth.connected} {account}. {t.auth.synced}</p>
-                <div><button className="btn small" onClick={logout}>{t.auth.logout}</button></div>
+                <div className="sheet-actions">
+                  <Link className="btn small" href={`/${lang}/nouveau-mot-de-passe`}>{t.pw.change}</Link>
+                  <button className="btn small" onClick={logout}>{t.auth.logout}</button>
+                </div>
               </>
             ) : (
               <>
