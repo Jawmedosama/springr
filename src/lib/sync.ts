@@ -138,6 +138,8 @@ async function pushSeen(id: string) {
 
 /** Le profil d'abord : les candidatures et les offres vues y sont rattachées. */
 async function pushAll(id: string) {
+  // Sans profil, rien ne peut encore être rattaché : un invité garde tout ici jusqu'à son inscription.
+  if (!store.getProfile()) return;
   await pushProfile(id);
   await Promise.all([pushApps(id), pushSeen(id)]);
 }
@@ -194,6 +196,7 @@ export async function attach(id: string, email: string): Promise<boolean> {
   userId = id;
   setStoreListener(onChange);
   await pushAll(id);
+  window.dispatchEvent(new Event("springr:synced"));
   return hadProfile !== Boolean(store.getProfile()) || merged.size !== localApps.length;
 }
 

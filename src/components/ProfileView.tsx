@@ -24,7 +24,13 @@ export default function ProfileView({ lang }: { lang: Lang }) {
   useEffect(() => {
     setProfile(store.getProfile());
     getSupabase()?.auth.getSession().then(({ data }) => setAccount(data.session?.user.email ?? null));
-  }, []);
+    // Compte tout neuf : après la connexion, on passe aux étapes du profil.
+    const onSynced = () => {
+      if (!store.getProfile()) window.location.href = `/${lang}/inscription`;
+    };
+    window.addEventListener("springr:synced", onSynced);
+    return () => window.removeEventListener("springr:synced", onSynced);
+  }, [lang]);
 
   if (profile === undefined) return <main className="page" />;
   if (!profile)

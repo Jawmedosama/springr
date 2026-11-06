@@ -6,7 +6,7 @@ import { cityLabel } from "@/lib/belgium";
 import { activeCount, feedQuery, loadFilters, NO_FILTERS, saveFilters, type Filters } from "@/lib/filters";
 import { getDict } from "@/lib/i18n";
 import { matchOffer, type MatchResult } from "@/lib/match";
-import { store } from "@/lib/store";
+import { guestProfile, store } from "@/lib/store";
 import { minutes, travelTo, type Geo } from "@/lib/travel";
 import type { Lang, Offer, Profile } from "@/lib/types";
 import FilterPanel from "./FilterPanel";
@@ -14,6 +14,8 @@ import InstallHint from "./InstallHint";
 import OfferCard, { MatchRing } from "./OfferCard";
 import PrepSheet from "./PrepSheet";
 import SearchElsewhere from "./SearchElsewhere";
+import StartButton from "./StartButton";
+import StartDialog from "./StartDialog";
 import { IconHeart, IconInfo, IconPen, IconX } from "./Icons";
 
 const THRESHOLD = 110;
@@ -50,6 +52,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const lastVisit = useRef<string | undefined>(undefined);
   const [geo, setGeo] = useState<Geo | null>(null);
   const [gone, setGone] = useState<string | null>(null);
+  const [askAccount, setAskAccount] = useState(false);
 
   const fetchPage = useCallback(
     (w: string, c: string, f: Filters, p: Profile | null, n: number) =>
@@ -96,7 +99,8 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   );
 
   useEffect(() => {
-    const p = store.getProfile();
+    const guest = store.getGuest();
+    const p = store.getProfile() ?? (guest ? guestProfile(guest, lang) : null);
     setProfile(p);
     setSeen(store.getSeen());
     try {
@@ -105,7 +109,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     } catch {
       /* stockage indisponible */
     }
-    if (p) fetch("/geo-be.json").then((r) => r.json() as Promise<Geo>).then(setGeo).catch(() => setGeo(null));
+    if (p?.city || p?.postcode) fetch("/geo-be.json").then((r) => r.json() as Promise<Geo>).then(setGeo).catch(() => setGeo(null));
     const w = p?.field ?? "";
     const c = p?.city ?? "";
     setWhat(w);
@@ -113,7 +117,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     const f = loadFilters();
     setFilters(f);
     load(w, c, f, p);
-  }, [load]);
+  }, [load, lang]);
 
   // Le serveur a déjà filtré et classé toutes les offres : on garde son ordre.
   const ranked: Ranked[] = useMemo(
@@ -202,11 +206,11 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   }
 
   function openPrep(offer: Offer) {
-    if (!profile) {
-      window.location.href = `/${lang}/inscription`;
+    setDetail(null);
+    if (!store.getProfile()) {
+      setAskAccount(true);
       return;
     }
-    setDetail(null);
     setPrep(offer);
   }
 
@@ -235,7 +239,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         {demo && <p className="banner">{o.demo}</p>}
         {newCount > 0 && <p className="banner ok">{o.newSince.replace("{n}", String(newCount))}</p>}
         {profile === null && (
-          <p className="banner ok">{o.noProfile} <Link href={`/${lang}/inscription`}>{t.nav.start} →</Link></p>
+          <p className="banner ok">{o.noProfile} <StartButton lang={lang} className="link-btn">{t.nav.start} →</StartButton></p>
         )}
 
         {offers === null || profile === undefined ? (
@@ -385,6 +389,8 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           </div>
         </div>
       )}
+
+      {askAccount && <StartDialog lang={lang} mode="signup" onClose={() => setAskAccount(false)} />}
 
       {prep && profile && (
         <PrepSheet

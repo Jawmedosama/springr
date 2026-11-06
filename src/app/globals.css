@@ -434,6 +434,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .ico, .btn svg, .tag svg, .card-company span svg { width: 1em; height: 1em; flex: none; }
 .card-company span svg { vertical-align: -2px; }
 .mobile-menu .btn { margin-top: 8px; }
+.start-sheet { max-width: 440px; }
+.guest-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 16px; background: var(--bg-2); font-size: 0.85rem; }
+.guest-bar .btn { flex: none; }
 .burger svg { width: 20px; height: 20px; }
 
 .elsewhere { display: grid; gap: 8px; margin-top: 20px; }

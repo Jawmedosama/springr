@@ -7,6 +7,7 @@ import type { CvFields } from "@/lib/cvParse";
 import { getDict } from "@/lib/i18n";
 import { isEligibleAge, regionFromPostcode } from "@/lib/belgium";
 import { store } from "@/lib/store";
+import { getSupabase } from "@/lib/supabase";
 import type { ContractType, Lang, Profile } from "@/lib/types";
 import CvImport from "./CvImport";
 
@@ -32,7 +33,17 @@ export default function SignupForm({ lang }: { lang: Lang }) {
 
   useEffect(() => {
     const p = store.getProfile();
-    if (p) setF((x) => ({ ...x, ...p, phone: p.phone ?? "", skills: p.skills.join(", "), cvText: p.cvText ?? "", consent: true }));
+    if (p) {
+      setF((x) => ({ ...x, ...p, phone: p.phone ?? "", skills: p.skills.join(", "), cvText: p.cvText ?? "", consent: true }));
+      return;
+    }
+    // Reprend ce qui est déjà connu : le mode invité et l'adresse du compte.
+    const g = store.getGuest();
+    if (g) setF((x) => ({ ...x, city: g.city, contracts: g.contracts }));
+    getSupabase()?.auth.getSession().then(({ data }) => {
+      const mail = data.session?.user.email;
+      if (mail) setF((x) => ({ ...x, email: x.email || mail }));
+    });
   }, []);
 
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));

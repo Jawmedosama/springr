@@ -7,6 +7,7 @@ import type { Dict } from "@/lib/i18n";
 import { store } from "@/lib/store";
 import type { Lang } from "@/lib/types";
 import { IconBuilding, IconCards, IconList, IconMenu, IconUser } from "./Icons";
+import StartButton from "./StartButton";
 
 export function Logo({ lang, brand }: { lang: Lang; brand: string }) {
   return (
@@ -25,7 +26,11 @@ export default function Header({ lang, t }: { lang: Lang; t: Dict }) {
   const path = usePathname() ?? "";
   const [open, setOpen] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
-  useEffect(() => setHasProfile(Boolean(store.getProfile())), [path]);
+  const [guest, setGuest] = useState(false);
+  useEffect(() => {
+    setHasProfile(Boolean(store.getProfile()));
+    setGuest(!store.getProfile() && Boolean(store.getGuest()));
+  }, [path]);
   const other = lang === "fr" ? "nl" : "fr";
   const switchTo = path.replace(/^\/(fr|nl)/, `/${other}`) || `/${other}`;
   const isHome = path === `/${lang}`;
@@ -44,9 +49,7 @@ export default function Header({ lang, t }: { lang: Lang; t: Dict }) {
       ]
     : app;
 
-  const cta = hasProfile
-    ? { href: `/${lang}/offres`, label: t.nav.offers }
-    : { href: `/${lang}/inscription`, label: t.nav.start };
+  const installed = hasProfile || guest;
 
   return (
     <>
@@ -62,17 +65,33 @@ export default function Header({ lang, t }: { lang: Lang; t: Dict }) {
           </nav>
           <div className="top-right">
             <Link href={switchTo} className="lang-switch" hrefLang={other}>{other.toUpperCase()}</Link>
-            <Link href={cta.href} className="btn dark small">{cta.label}</Link>
+            {!hasProfile && <StartButton lang={lang} mode="login" className="btn small">{t.start.login}</StartButton>}
+            {installed ? (
+              <Link href={`/${lang}/offres`} className="btn dark small">{t.nav.offers}</Link>
+            ) : (
+              <StartButton lang={lang} className="btn dark small">{t.nav.start}</StartButton>
+            )}
             <button className="burger" aria-label={t.nav.menu} aria-expanded={open} onClick={() => setOpen(!open)}>
               <IconMenu className="" />
             </button>
           </div>
         </div>
-        <nav className={open ? "mobile-menu open" : "mobile-menu"} onClick={() => setOpen(false)}>
-          {links.map((l) => <Link key={l.href} href={l.href}>{l.label}</Link>)}
-          <Link href={cta.href} className="btn dark">{cta.label}</Link>
+        <nav className={open ? "mobile-menu open" : "mobile-menu"}>
+          {links.map((l) => <Link key={l.href} href={l.href} onClick={() => setOpen(false)}>{l.label}</Link>)}
+          {!hasProfile && <StartButton lang={lang} mode="login" className="btn block">{t.start.login}</StartButton>}
+          {installed ? (
+            <Link href={`/${lang}/offres`} className="btn dark">{t.nav.offers}</Link>
+          ) : (
+            <StartButton lang={lang} className="btn dark block">{t.nav.start}</StartButton>
+          )}
         </nav>
       </header>
+      {guest && !path.endsWith("/inscription") && (
+        <div className="guest-bar">
+          <span>{t.start.banner}</span>
+          <StartButton lang={lang} mode="signup" className="btn small">{t.start.signup}</StartButton>
+        </div>
+      )}
       {!isHome && (
         <nav className="tabbar" aria-label={t.nav.menu}>
           {app.map(({ href, label, Icon }) => (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import OfferCard, { initials } from "@/components/OfferCard";
+import StartButton from "@/components/StartButton";
 import {
   IconArrow, IconBell, IconBuilding, IconCards, IconGlobe, IconHeart, IconList, IconPen, IconShield, IconTarget, IconX,
 } from "@/components/Icons";
@@ -47,7 +48,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
           <h1>{h.title1}<span className="hl">{h.title2}</span></h1>
           <p className="lead">{h.lead}</p>
           <div className="cta-row">
-            <Link className="btn dark big" href={`/${lang}/inscription`}>{h.cta} <IconArrow className="ico" /></Link>
+            <StartButton lang={lang} className="btn dark big">{h.cta} <IconArrow className="ico" /></StartButton>
             <Link className="btn big" href={`/${lang}/offres`}>{h.secondary}</Link>
           </div>
           <p className="note">{h.note}</p>
@@ -220,7 +221,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
                 {p.soon ? (
                   <button className="btn block" disabled>{p.cta}</button>
                 ) : (
-                  <Link className="btn brand block" href={`/${lang}/inscription`}>{p.cta}</Link>
+                  <StartButton lang={lang} className="btn brand block">{p.cta}</StartButton>
                 )}
               </div>
             ))}
@@ -246,7 +247,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
         <section className="final">
           <h2>{h.finalTitle}</h2>
           <p>{h.finalLead}</p>
-          <Link className="btn lime big" href={`/${lang}/inscription`}>{h.cta} <IconArrow className="ico" /></Link>
+          <StartButton lang={lang} className="btn lime big">{h.cta} <IconArrow className="ico" /></StartButton>
         </section>
       </div>
     </main>

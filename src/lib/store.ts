@@ -1,13 +1,20 @@
 "use client";
 
 import { learn, NO_TASTE, type Taste } from "./taste";
-import type { Application, Offer, Profile } from "./types";
+import type { Application, ContractType, Lang, Offer, Profile, Region } from "./types";
 
 /**
  * Stockage local du prototype (dans le navigateur).
  * À remplacer par Supabase (voir supabase/schema.sql) quand le projet sera en ligne.
  */
-const K = { profile: "springr.profile", apps: "springr.apps", seen: "springr.seen", taste: "springr.taste" };
+const K = { profile: "springr.profile", apps: "springr.apps", seen: "springr.seen", taste: "springr.taste", guest: "springr.guest" };
+
+/** Mode invité : juste de quoi trier les offres, jamais envoyé au compte. */
+export interface Guest {
+  city: string;
+  region: Region | null;
+  contracts: ContractType[];
+}
 
 /** Délai avant la relance proposée, en jours. */
 export const FOLLOW_UP_DAYS = 7;
@@ -45,7 +52,18 @@ export function inDays(days: number): string {
   return new Date(Date.now() + days * 24 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
+/** Profil minimal pour le tri, gardé hors du vrai profil pour ne pas partir vers un compte. */
+export function guestProfile(g: Guest, lang: Lang): Profile {
+  return {
+    firstName: "", lastName: "", email: "", birthDate: "", street: "", number: "", postcode: "",
+    city: g.city, region: g.region as Region, declaredResident: false, studyLevel: "", field: "", skills: [],
+    languages: [lang === "nl" ? "Nederlands" : "Français"], contracts: g.contracts, mobilityKm: 30, createdAt: "",
+  };
+}
+
 export const store = {
+  getGuest: () => read<Guest | null>(K.guest, null),
+  setGuest: (g: Guest) => write(K.guest, g),
   getProfile: () => read<Profile | null>(K.profile, null),
   setProfile: (p: Profile) => {
     write(K.profile, p);
