@@ -49,6 +49,7 @@ export default async function LangLayout({
               <Logo lang={lang} brand={t.brand} />
               <p style={{ marginTop: 12 }}>{t.footer.tagline}</p>
               <p className="small">{t.footer.note}</p>
+              <p className="small"><a href="https://www.adzuna.be" target="_blank" rel="noreferrer">The Adzuna API</a></p>
               <p className="small">
                 <a href="https://www.odwb.be/explore/dataset/offres-d-emploi-forem/" target="_blank" rel="noreferrer">{t.footer.sources}</a>
               </p>

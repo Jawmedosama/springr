@@ -30,7 +30,7 @@ function guessContract(job: AdzunaJob): ContractType {
 }
 
 /** API Adzuna pour la Belgique (pays « be »). Clé gratuite sur developer.adzuna.com. */
-export async function fetchAdzuna(what = "", page = 1, where = "", km = 30): Promise<Offer[]> {
+export async function fetchAdzuna(what = "", page = 1, where = "", km = 30, keepSeconds = 21600): Promise<Offer[]> {
   const id = process.env.ADZUNA_APP_ID;
   const key = process.env.ADZUNA_APP_KEY;
   if (!id || !key) return [];
@@ -49,7 +49,7 @@ export async function fetchAdzuna(what = "", page = 1, where = "", km = 30): Pro
   }
   const res = await fetch(
     `https://api.adzuna.com/v1/api/jobs/be/search/${page}?${params}`,
-    { next: { revalidate: 3600 } },
+    { next: { revalidate: keepSeconds } },
   );
   if (!res.ok) return [];
   const data = (await res.json()) as { results?: AdzunaJob[] };

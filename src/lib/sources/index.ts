@@ -128,6 +128,13 @@ export interface OffersResult {
   removed: { duplicates: number; expired: number };
 }
 
+/**
+ * Grandes villes lues une fois par jour pour toute la Belgique : ces appels sont partagés par tous les visiteurs.
+ * La clé gratuite limite les appels par minute et par jour : 18 ici, plus les 5 de la recherche, restent sous 25.
+ */
+const POOL_CITIES = ["Bruxelles", "Antwerpen", "Gent", "Liège", "Charleroi", "Namur", "Leuven", "Brugge", "Mons"];
+const adzunaPool = () => POOL_CITIES.flatMap((city) => [1, 2].map((page) => fetchAdzuna("", page, city, 20, 86400)));
+
 const FLEXI = /\bflexi\b|\bflexi[- ]?jobs?\b/i;
 const STUDENT = /\b(jobiste|job[- ]étudiant|job[- ]etudiant|contrat étudiant|contrat etudiant|étudiante?s?|etudiante?s?|studentenjob|jobstudent|student)\b/i;
 
@@ -193,6 +200,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   ];
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
+  if (!what && !where) calls.push(...adzunaPool());
   calls.push(fetchCareers({ what, where, region: q.region }), ...aggregators(what, where, km));
   return finish(await Promise.allSettled(calls));
 }

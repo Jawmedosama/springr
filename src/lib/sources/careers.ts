@@ -42,6 +42,18 @@ const BOARDS: { ats: "greenhouse" | "lever" | "recruitee" | "smartrecruiters"; s
   { ats: "recruitee", slug: "poppy", name: "Poppy" },
   { ats: "recruitee", slug: "bunq", name: "bunq" },
   { ats: "lever", slug: "deliverect", name: "Deliverect" },
+  { ats: "smartrecruiters", slug: "sgs", name: "SGS" },
+  { ats: "smartrecruiters", slug: "eurofins", name: "Eurofins" },
+  { ats: "smartrecruiters", slug: "picanolgroup", name: "Picanol Group" },
+  { ats: "smartrecruiters", slug: "ayming", name: "Ayming" },
+  { ats: "smartrecruiters", slug: "tessenderlogroup", name: "Tessenderlo Group" },
+  { ats: "smartrecruiters", slug: "continental", name: "Continental" },
+  { ats: "smartrecruiters", slug: "alten", name: "Alten" },
+  { ats: "greenhouse", slug: "inthepocket", name: "In The Pocket" },
+  { ats: "greenhouse", slug: "datacamp", name: "DataCamp" },
+  { ats: "greenhouse", slug: "guardsquare", name: "Guardsquare" },
+  { ats: "recruitee", slug: "colruytgroup", name: "Colruyt Group" },
+  { ats: "recruitee", slug: "konicaminolta", name: "Konica Minolta" },
 ];
 
 const IN_BELGIUM = /belgi|belgique|belgië/i;
