@@ -5,11 +5,16 @@ import { getDict } from "@/lib/i18n";
 import { getSupabase } from "@/lib/supabase";
 import type { Lang } from "@/lib/types";
 
+/** Le modèle d'e-mail ne contient le code qu'avec un service d'envoi à nous : le champ reste caché avant. */
+const CODE_IN_EMAIL = process.env.NEXT_PUBLIC_OTP_CODE === "1";
+
 /** Le code se tape là où on veut être connecté : pas de piège de navigateur, comme avec le lien. */
 export default function CodeForm({ email, lang }: { email: string; lang: Lang }) {
   const s = getDict(lang).start;
   const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+
+  if (!CODE_IN_EMAIL) return <p className="banner ok" style={{ margin: 0 }}>{s.sentLink}</p>;
 
   async function verify(e: React.FormEvent) {
     e.preventDefault();
