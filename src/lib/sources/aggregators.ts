@@ -38,8 +38,12 @@ export async function fetchJooble(what = "", where = "", km = 30, page = 1): Pro
     body: JSON.stringify({ keywords: what, location: where || "Belgique", radius: String(km), page: String(page), ResultOnPage: "100" }),
     next: { revalidate: 3600 },
   }).catch(() => null);
-  if (!res || !res.ok) return [];
+  if (!res || !res.ok) {
+    console.warn(`Jooble : réponse ${res?.status ?? "absente"}`);
+    return [];
+  }
   const data = (await res.json().catch(() => null)) as { jobs?: JoobleJob[] } | null;
+  if (!data?.jobs?.length) console.warn("Jooble : aucune offre renvoyée");
   return (data?.jobs ?? []).map((j) => ({
     id: `jooble-${j.id}`,
     title: clean(j.title),
@@ -81,8 +85,12 @@ export async function fetchCareerjet(what = "", where = "", page = 1): Promise<O
     url: "https://springr-two.vercel.app",
   });
   const res = await fetch(`https://public.api.careerjet.net/search?${params}`, { next: { revalidate: 3600 } }).catch(() => null);
-  if (!res || !res.ok) return [];
-  const data = (await res.json().catch(() => null)) as { jobs?: CareerjetJob[] } | null;
+  if (!res || !res.ok) {
+    console.warn(`Careerjet : réponse ${res?.status ?? "absente"}`);
+    return [];
+  }
+  const data = (await res.json().catch(() => null)) as { jobs?: CareerjetJob[]; type?: string; error?: string } | null;
+  if (!data?.jobs?.length) console.warn(`Careerjet : aucune offre (${data?.type ?? "?"} ${data?.error ?? ""})`);
   return (data?.jobs ?? []).map((j) => ({
     id: `careerjet-${j.url}`,
     title: clean(j.title),
