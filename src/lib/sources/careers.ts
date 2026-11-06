@@ -1,4 +1,5 @@
 import { provinceFromPlace, regionFromPlace } from "../belgium";
+import { queryFamily } from "../taste";
 import type { ContractType, Offer, Region } from "../types";
 
 /**
@@ -141,6 +142,7 @@ export interface CareersQuery {
 
 export async function fetchCareers(q: CareersQuery = {}): Promise<Offer[]> {
   const words = (q.what ?? "").toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+  const family = queryFamily(q.what ?? "");
   const region = q.region ?? (q.where ? regionFromPlace(q.where) : undefined);
   const lists = await Promise.all(
     BOARDS.map(async (b) => {
@@ -164,6 +166,6 @@ export async function fetchCareers(q: CareersQuery = {}): Promise<Offer[]> {
   );
   return lists
     .flat()
-    .filter((o) => !words.length || words.some((w) => o.title.toLowerCase().includes(w)))
+    .filter((o) => !words.length || family?.test(o.title) || words.some((w) => o.title.toLowerCase().includes(w)))
     .filter((o) => !region || !o.region || o.region === region);
 }

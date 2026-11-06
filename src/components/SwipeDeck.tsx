@@ -234,6 +234,10 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           <button className="btn dark" type="submit">{o.search}</button>
         </form>
 
+        <div className="filters">
+          <button className={filters.easy ? "chip on" : "chip"} aria-pressed={filters.easy} onClick={() => changeFilters({ ...filters, easy: !filters.easy })}>{o.easy}</button>
+        </div>
+
         <FilterPanel t={t} filters={filters} count={total} hiddenByFrench={hiddenByFrench} onChange={changeFilters} />
 
         {demo && <p className="banner">{o.demo}</p>}

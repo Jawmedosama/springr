@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
@@ -81,6 +82,7 @@ export default async function LangLayout({
             </div>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );

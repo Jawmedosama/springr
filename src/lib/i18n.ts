@@ -27,6 +27,8 @@ const fr = {
     cta: "Commencer gratuitement",
     secondary: "Voir les offres",
     note: "Gratuit, sans carte bancaire. En français et en néerlandais.",
+    liveCount: "{n} offres en Belgique en ce moment, dont {d} sans intérim",
+    topCompanies: "Ils recrutent en ce moment :",
     stats: [
       ["3", "régions couvertes : Bruxelles, Wallonie, Flandre"],
       ["FR · NL", "interface et offres dans les deux langues"],
@@ -122,6 +124,8 @@ const fr = {
     faq: [
       ["C'est quoi Ça va jobber ?", "Une plateforme d'emploi pour les 16 à 35 ans qui vivent en Belgique. Elle rassemble les offres de plusieurs sources, les classe selon ton profil et t'aide à postuler."],
       ["C'est vraiment gratuit ?", "Oui. Chercher, swiper, préparer et suivre tes candidatures est gratuit, sans carte bancaire."],
+      ["Comment postuler ?", "Ouvre l'offre et postule sur le site de l'annonce. Ça va jobber prépare ton mail type et ton CV, et tu gardes le suivi dans Mes candidatures. Le site n'envoie rien à ta place."],
+      ["Et les offres d'intérim ?", "Elles sont signalées et classées après les offres d'employeurs. Le filtre « Sans intérim » les masque. La détection se fait sur le nom et le secteur : quelques offres peuvent lui échapper."],
       ["D'où viennent les offres ?", "Des données ouvertes du Forem, d'Adzuna Belgique et de pages carrières d'entreprises. Chaque offre renvoie vers l'annonce d'origine."],
       ["Pourquoi vérifier mon adresse ?", "Le service est réservé aux personnes qui résident en Belgique. Ton code postal sert aussi à te proposer des offres proches de chez toi."],
       ["Que reçoit l'IA ?", "Seulement si tu coches la case à l'inscription : le texte de ton CV, sans tes coordonnées, pour remplir ton profil. Sans cette case, tout reste dans ton navigateur."],
@@ -205,7 +209,7 @@ const fr = {
     where: "Ville",
     search: "Chercher",
     all: "Tout",
-    easy: "Offres accessibles",
+    easy: "Sans expérience / premier job",
     more: "Charger plus d'offres",
     newSince: "{n} nouvelles offres depuis ta dernière visite.",
     installIos: "Installe l'appli : appuie sur Partager, puis « Sur l'écran d'accueil ».",
@@ -518,6 +522,8 @@ const nl: Dict = {
     cta: "Gratis beginnen",
     secondary: "Bekijk vacatures",
     note: "Gratis, zonder bankkaart. In het Nederlands en het Frans.",
+    liveCount: "{n} vacatures in België op dit moment, waarvan {d} zonder interim",
+    topCompanies: "Zij werven nu aan:",
     stats: [
       ["3", "gewesten: Brussel, Wallonië, Vlaanderen"],
       ["NL · FR", "interface en vacatures in beide talen"],
@@ -613,6 +619,8 @@ const nl: Dict = {
     faq: [
       ["Wat is Ça va jobber?", "Een jobplatform voor 16- tot 35-jarigen die in België wonen. Het verzamelt vacatures uit verschillende bronnen, rangschikt ze volgens je profiel en helpt je solliciteren."],
       ["Is het echt gratis?", "Ja. Zoeken, swipen, voorbereiden en je sollicitaties opvolgen is gratis, zonder bankkaart."],
+      ["Hoe solliciteer ik?", "Open de vacature en solliciteer op de site van de advertentie. Ça va jobber zet je standaardmail en cv klaar, en je volgt alles op in Mijn sollicitaties. De site verstuurt niets in jouw plaats."],
+      ["En uitzendvacatures?", "Ze zijn aangeduid en komen na de vacatures van werkgevers. De filter « Zonder interim » verbergt ze. De herkenning gebeurt op naam en sector: enkele vacatures kunnen eraan ontsnappen."],
       ["Waar komen de vacatures vandaan?", "Van de open data van Le Forem, Adzuna België en carrièrepagina's van bedrijven. Elke vacature verwijst naar de oorspronkelijke advertentie."],
       ["Waarom mijn adres controleren?", "De dienst is voorbehouden aan personen die in België wonen. Je postcode dient ook om je vacatures in de buurt te tonen."],
       ["Wat krijgt de AI?", "Enkel als je het vakje bij de inschrijving aanvinkt: de tekst van je cv, zonder je contactgegevens, om je profiel in te vullen. Zonder dat vakje blijft alles in je browser."],
@@ -696,7 +704,7 @@ const nl: Dict = {
     where: "Stad",
     search: "Zoeken",
     all: "Alles",
-    easy: "Toegankelijke vacatures",
+    easy: "Zonder ervaring / eerste job",
     more: "Meer vacatures laden",
     newSince: "{n} nieuwe vacatures sinds je laatste bezoek.",
     installIos: "Installeer de app: tik op Delen en dan « Zet op beginscherm ».",

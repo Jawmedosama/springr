@@ -22,6 +22,12 @@ export function familyOf(text: string): string | undefined {
   return Object.keys(FAMILIES).find((k) => FAMILIES[k].test(text));
 }
 
+/** Famille de métiers d'une recherche courte : « vendeur » trouve aussi « conseiller de vente » et « verkoper ». */
+export function queryFamily(what: string): RegExp | null {
+  const family = what.trim().split(/\s+/).length <= 3 ? familyOf(what) : undefined;
+  return family ? FAMILIES[family] : null;
+}
+
 export const offerFamily = (o: Offer) => familyOf(o.title) ?? (o.sector ? familyOf(o.sector) : undefined);
 
 /** Préférences apprises sur les swipes : seulement des compteurs, gardés dans le navigateur. */

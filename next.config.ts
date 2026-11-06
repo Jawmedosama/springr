@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/companies": ["./data/forem.json"],
     "/api/feed": ["./data/forem.json"],
+    "/api/stats": ["./data/forem.json"],
     "/[lang]/jobs/[metier]/[ville]": ["./data/forem.json"],
   },
 };

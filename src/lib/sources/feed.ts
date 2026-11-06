@@ -5,6 +5,8 @@ import type { ContractType, Lang, MatchProfile, Offer, Province, Region } from "
 import { getAllOffers } from "./index";
 
 const PAGE_SIZE = 100;
+/** Pour le classement seulement : à score proche, une offre d'employeur passe avant une agence. */
+const AGENCY_RANK_PENALTY = 25;
 
 export interface FeedRequest {
   what?: string;
@@ -44,13 +46,8 @@ export async function getFeed(r: FeedRequest): Promise<FeedResult> {
   const p = r.profile;
   const forScore = p ? { ...p, cvText: p.experienced ? "x".repeat(400) : "" } : null;
   const ranked = kept
-    .map((offer) => ({ offer, score: forScore ? matchOffer(offer, forScore, r.lang, r.taste).score : 0 }))
-    .sort(
-      (a, b) =>
-        b.score - a.score ||
-        Number(a.offer.agency ?? false) - Number(b.offer.agency ?? false) ||
-        b.offer.publishedAt.localeCompare(a.offer.publishedAt),
-    );
+    .map((offer) => ({ offer, score: (forScore ? matchOffer(offer, forScore, r.lang, r.taste).score : 0) - (offer.agency ? AGENCY_RANK_PENALTY : 0) }))
+    .sort((a, b) => b.score - a.score || b.offer.publishedAt.localeCompare(a.offer.publishedAt));
 
   const page = r.page ?? 0;
   const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((x) => x.offer);

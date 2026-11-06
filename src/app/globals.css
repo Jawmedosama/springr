@@ -159,6 +159,13 @@ p { margin: 0 0 10px; }
 .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .hero .note { margin-top: 14px; font-size: 0.85rem; color: var(--muted); }
 .hero-demo { margin: 48px auto 0; max-width: 380px; }
+.demo-stack .card-job.front { animation: demo-swipe 6s ease-in-out infinite; }
+@keyframes demo-swipe {
+  0%, 55%, 100% { translate: 0 0; rotate: 0deg; }
+  70% { translate: 34px 0; rotate: 3deg; }
+  82% { translate: -28px 0; rotate: -2.5deg; }
+}
+@media (prefers-reduced-motion: reduce) { .demo-stack .card-job.front { animation: none; } }
 
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 36px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .stat { text-align: center; }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import OfferCard, { initials } from "@/components/OfferCard";
+import HomeStats from "@/components/HomeStats";
 import StartButton from "@/components/StartButton";
 import {
   IconArrow, IconBell, IconBuilding, IconCards, IconGlobe, IconHeart, IconList, IconPen, IconShield, IconTarget, IconX,
@@ -52,6 +53,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
             <Link className="btn big" href={`/${lang}/offres`}>{h.secondary}</Link>
           </div>
           <p className="note">{h.note}</p>
+          <HomeStats lang={lang} />
           <div className="hero-demo">
             <div className="demo-stack">
               <OfferCard offer={b} t={t} lang={lang} score={72} className="back" />

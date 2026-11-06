@@ -52,7 +52,7 @@ export const LEGAL: Record<Lang, Record<LegalSlug, LegalPage>> = {
     cookies: {
       title: "Cookies et stockage",
       sections: [
-        ["Ce que nous utilisons", ["Le site n'utilise ni cookie publicitaire ni outil de mesure d'audience.", "Il utilise le stockage de ton navigateur pour ton profil, tes candidatures, tes filtres, ton mail type et ton CV, ainsi que pour garder ta session de connexion. Ce stockage est nécessaire au fonctionnement du service."]],
+        ["Ce que nous utilisons", ["Le site n'utilise aucun cookie publicitaire. Il compte les visites de façon anonyme avec Vercel Web Analytics, sans cookie.", "Il utilise le stockage de ton navigateur pour ton profil, tes candidatures, tes filtres, ton mail type et ton CV, ainsi que pour garder ta session de connexion. Ce stockage est nécessaire au fonctionnement du service."]],
         ["Tout effacer", ["Tu peux tout effacer depuis ta page Profil ou dans les réglages de ton navigateur."]],
       ],
     },
@@ -95,7 +95,7 @@ export const LEGAL: Record<Lang, Record<LegalSlug, LegalPage>> = {
     cookies: {
       title: "Cookies en opslag",
       sections: [
-        ["Wat we gebruiken", ["De site gebruikt geen advertentiecookies of bezoekersmeting.", "Hij gebruikt de opslag van je browser voor je profiel, sollicitaties, filters, standaardmail en cv, en om je ingelogd te houden. Deze opslag is nodig voor de werking van de dienst."]],
+        ["Wat we gebruiken", ["De site gebruikt geen advertentiecookies. Bezoeken worden anoniem geteld met Vercel Web Analytics, zonder cookies.", "Hij gebruikt de opslag van je browser voor je profiel, sollicitaties, filters, standaardmail en cv, en om je ingelogd te houden. Deze opslag is nodig voor de werking van de dienst."]],
         ["Alles wissen", ["Je kunt alles wissen via je profielpagina of de instellingen van je browser."]],
       ],
     },

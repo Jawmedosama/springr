@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { queryFamily } from "../taste";
 import path from "node:path";
 import type { ContractType, Offer, Province, Region } from "../types";
 import { cityLabel, provinceFromPostcode, regionFromPlace, regionFromPostcode } from "../belgium";
@@ -74,6 +75,12 @@ function cleanCompany(name: string): string {
   return b && a.trim().toLowerCase() === b.trim().toLowerCase() ? a.trim() : name;
 }
 
+/** Le jeu de données garde parfois les apostrophes sous forme de code HTML. */
+const decode = (s: string) => s.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+
+/** Section 78 de la nomenclature NACE : agences d'emploi et de travail intérimaire. */
+const inAgencySector = (r: Rec) => Boolean(r.secteurscodenace?.some((c) => c.startsWith(AGENCY_SECTOR)));
+
 function titleCase(s: string): string {
   return s.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
 }
@@ -93,14 +100,14 @@ function describe(r: Rec): string {
 }
 
 function toOffer(r: Rec): Offer {
-  const title = r.titreoffre ?? "";
+  const title = decode(r.titreoffre ?? "");
   const postcode = r.lieuxtravailcodepostal?.[0];
   const region = (postcode && regionFromPostcode(postcode)) || regionFromPlace((r.lieuxtravailregion ?? []).join(", "));
   const contract = mapContract(r.typecontrat ?? "", title);
   return {
     id: `forem-${r.numerooffreforem}`,
     title,
-    company: cleanCompany(r.nomemployeur ?? ""),
+    company: decode(cleanCompany(r.nomemployeur ?? "")),
     city: titleCase(r.lieuxtravaillocalite?.[0] ?? ""),
     postcode,
     region: region ?? undefined,
@@ -115,7 +122,7 @@ function toOffer(r: Rec): Offer {
     url: r.url ?? "https://www.leforem.be",
     source: "Le Forem",
     publishedAt: r.datedebutdiffusion ?? new Date().toISOString(),
-    agency: contract === "interim" || Boolean(r.secteurscodenace?.includes(AGENCY_SECTOR)),
+    agency: contract === "interim" || inAgencySector(r),
   };
 }
 
@@ -183,12 +190,13 @@ function kmBetween(a: { lon: number; lat: number }, b: { lon: number; lat: numbe
   return Math.hypot(x, (b.lat - a.lat) * rad) * 6371;
 }
 
-const isAgency = (r: Rec) => Boolean(r.secteurscodenace?.includes(AGENCY_SECTOR)) || (r.typecontrat ?? "").startsWith("Intérimaire");
+const isAgency = (r: Rec) => inAgencySector(r) || (r.typecontrat ?? "").startsWith("Intérimaire");
 
 /** Cherche dans la copie du jour : aucune limite d'appels, et toutes les offres sont accessibles. */
 function searchSnapshot(records: Rec[], q: ForemQuery): Offer[] {
   const today = new Date().toISOString().slice(0, 10);
   const words = plain(q.what ?? "").split(/\s+/).filter(Boolean);
+  const family = queryFamily(q.what ?? "");
   const wanted = (q.contracts ?? []).map((c) => CONTRACT_VALUES[c]).filter((v): v is string => Boolean(v));
   const byContract = wanted.length > 0 && wanted.length === q.contracts?.length;
   // Le jeu de données utilise tantôt le nom français, tantôt le nom néerlandais (Gent, Antwerpen).
@@ -213,7 +221,8 @@ function searchSnapshot(records: Rec[], q: ForemQuery): Offer[] {
     }
     if (words.length) {
       const text = plain(`${r.titreoffre} ${r.metier ?? ""} ${(r.secteurs ?? []).join(" ")} ${r.nomemployeur ?? ""}`);
-      if (!words.every((w) => text.includes(w))) return false;
+      const sameJob = family && family.test(`${r.titreoffre} ${r.metier ?? ""}`);
+      if (!sameJob && !words.every((w) => text.includes(w))) return false;
     }
     return true;
   });

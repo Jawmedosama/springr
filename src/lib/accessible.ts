@@ -1,7 +1,7 @@
 import type { MatchProfile, Offer } from "./types";
 
 const FOR_BEGINNERS =
-  /(débutant|debutant|sans expérience|sans experience|pas d'expérience|première expérience|premier emploi|junior|starter|geen ervaring|zonder ervaring|beginner|étudiant|etudiant|student|flexi|polyvalent|formation assurée|opleiding voorzien)/i;
+  /(débutant|debutant|sans expérience|sans experience|aucune expérience|aucune experience|pas d'expérience|pas d'experience|expérience non requise|première expérience|premier emploi|premier job|junior|starter|geen ervaring|zonder ervaring|ervaring niet vereist|beginner|étudiant|etudiant|student|jobstudent|flexi|polyvalent|formation assurée|opleiding voorzien)/i;
 /** Métiers qui recrutent souvent sans diplôme particulier. */
 const ENTRY_JOBS =
   /(vendeu|verkoper|verkoopster|caissi|kassier|magasinier|magazijn|manutention|serveu|plongeu|commis|nettoyage|schoonmaak|livreu|chauffeur-livreur|accueil|réassort|équipier|equipier|préparateur de commandes|orderpicker|logistiek medewerker|aide-)/i;
