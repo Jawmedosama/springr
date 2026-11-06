@@ -69,7 +69,7 @@ interface CareerjetJob {
   salary?: string;
 }
 
-/** Identifiant partenaire gratuit sur https://www.careerjet.be/partners/ */
+/** Clé partenaire gratuite sur https://www.careerjet.be/partners/ */
 export async function fetchCareerjet(what = "", where = "", page = 1): Promise<Offer[]> {
   const affid = process.env.CAREERJET_AFFID;
   if (!affid) return [];
@@ -77,14 +77,16 @@ export async function fetchCareerjet(what = "", where = "", page = 1): Promise<O
     locale_code: "fr_BE",
     keywords: what,
     location: where,
-    affid,
-    pagesize: "99",
     page: String(page),
-    user_ip: "127.0.0.1",
-    user_agent: "Springr",
+    page_size: "99",
+    user_ip: "1.1.1.1",
+    user_agent: "Mozilla/5.0",
     url: "https://springr-two.vercel.app",
   });
-  const res = await fetch(`https://public.api.careerjet.net/search?${params}`, { next: { revalidate: 3600 } }).catch(() => null);
+  const res = await fetch(`https://search.api.careerjet.net/v4/query?${params}`, {
+    headers: { authorization: `Basic ${Buffer.from(`${affid}:`).toString("base64")}` },
+    next: { revalidate: 3600 },
+  }).catch(() => null);
   if (!res || !res.ok) {
     console.warn(`Careerjet : réponse ${res?.status ?? "absente"}`);
     return [];
