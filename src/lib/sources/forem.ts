@@ -105,6 +105,7 @@ function toOffer(r: Rec): Offer {
     postcode,
     region: region ?? undefined,
     province: provinceFromPostcode(postcode),
+    sector: r.secteurs?.[0],
     contract,
     description: describe(r),
     url: r.url ?? "https://www.leforem.be",

@@ -57,6 +57,19 @@ export default function ProfileView({ lang }: { lang: Lang }) {
     URL.revokeObjectURL(url);
   }
 
+  function exportForExtension() {
+    if (!profile) return;
+    const { firstName, lastName, email, phone, street, number, postcode, city } = profile;
+    const mail = loadTemplate(lang);
+    const data = { firstName, lastName, email, phone, street, number, postcode, city, mailBody: mail.body.replaceAll("{prenom}", firstName).replaceAll("{nom}", lastName) };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "profil-extension.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function logout() {
     await signOut();
     resetTemplate(lang);
@@ -135,6 +148,8 @@ export default function ProfileView({ lang }: { lang: Lang }) {
           <p className="muted" style={{ margin: 0 }}>{account ? t.auth.dataText : p.dataText}</p>
           <div className="sheet-actions">
             <button className="btn small" onClick={exportData}>{p.export}</button>
+            <button className="btn small" onClick={exportForExtension}>{p.exportExt}</button>
+            <Link className="btn small" href={`/${lang}/extension`}>{p.extensionGuide}</Link>
             <button className="btn small" onClick={erase} style={{ color: "var(--bad)" }}>{p.erase}</button>
           </div>
         </section>

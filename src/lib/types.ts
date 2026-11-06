@@ -25,6 +25,8 @@ export interface Offer {
   postcode?: string;
   region?: Region;
   province?: Province;
+  /** Secteur d'activité, quand la source le donne. */
+  sector?: string;
   contract: ContractType;
   description: string;
   language?: Lang | "de" | "en";

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { width: 280px; font: 14px system-ui, sans-serif; margin: 12px; color: #0e1a13; }
+    h1 { font-size: 15px; margin: 0 0 8px; }
+    button, label.file { display: block; width: 100%; box-sizing: border-box; padding: 9px; margin-top: 8px; border-radius: 999px; border: 1px solid #ccc; background: #fff; font: inherit; font-weight: 600; text-align: center; cursor: pointer; }
+    #fill { background: #0f8f4c; border-color: #0f8f4c; color: #fff; }
+    input[type="file"] { display: none; }
+    p { margin: 8px 0 0; color: #5c665f; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Ça va jobber</h1>
+  <p id="status">Aucun profil importé.</p>
+  <button id="fill">Remplir ce formulaire</button>
+  <label class="file">Importer mon profil (.json)<input id="profile" type="file" accept=".json" /></label>
+  <label class="file">Ajouter mon CV (PDF)<input id="cv" type="file" accept="application/pdf" /></label>
+  <p>L'extension n'envoie jamais rien : vérifie le formulaire et clique toi-même sur Envoyer.</p>
+  <script src="popup.js"></script>
+</body>
+</html>

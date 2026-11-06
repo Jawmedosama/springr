@@ -160,5 +160,5 @@ export async function getRegionOffers(region?: Region): Promise<OffersResult> {
     cities.length > 1
       ? cities.map((c) => fetchAdzuna("", 1, c, 30))
       : [1, 2, 3, 4, 5].map((p) => fetchAdzuna("", p, cities[0], 30));
-  return finish(await Promise.allSettled([fetchForem({ region }), fetchCareers({ region }), ...calls]));
+  return finish(await Promise.allSettled([fetchForem({ region, all: true }), fetchCareers({ region }), ...calls]));
 }

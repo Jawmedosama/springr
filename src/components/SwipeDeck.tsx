@@ -9,6 +9,7 @@ import { matchOffer, type MatchResult } from "@/lib/match";
 import { store } from "@/lib/store";
 import type { Lang, Offer, Profile } from "@/lib/types";
 import FilterPanel from "./FilterPanel";
+import InstallHint from "./InstallHint";
 import OfferCard, { MatchRing } from "./OfferCard";
 import PrepSheet from "./PrepSheet";
 import SearchElsewhere from "./SearchElsewhere";
@@ -44,6 +45,8 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [hiddenByFrench, setHiddenByFrench] = useState(0);
+  const [newCount, setNewCount] = useState(0);
+  const lastVisit = useRef<string | undefined>(undefined);
 
   const fetchPage = useCallback(
     (w: string, c: string, f: Filters, p: Profile | null, n: number) =>
@@ -54,6 +57,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           ...feedQuery(w, c, f, p?.mobilityKm),
           lang,
           page: n,
+          since: lastVisit.current,
           profile: p && {
             contracts: p.contracts,
             region: p.region,
@@ -63,7 +67,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
             experienced: (p.cvText ?? "").length >= 400,
           },
         }),
-      }).then((r) => r.json() as Promise<{ offers: Offer[]; total: number; hiddenByFrench: number; hasMore: boolean; demo: boolean }>),
+      }).then((r) => r.json() as Promise<{ offers: Offer[]; total: number; hiddenByFrench: number; newCount: number; hasMore: boolean; demo: boolean }>),
     [lang],
   );
 
@@ -78,6 +82,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           setOffers(d.offers);
           setTotal(d.total);
           setHiddenByFrench(d.hiddenByFrench);
+          setNewCount(d.newCount);
           setHasMore(d.hasMore);
           setDemo(d.demo);
         })
@@ -90,6 +95,12 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     const p = store.getProfile();
     setProfile(p);
     setSeen(store.getSeen());
+    try {
+      lastVisit.current = localStorage.getItem("springr.lastVisit") ?? undefined;
+      localStorage.setItem("springr.lastVisit", new Date().toISOString());
+    } catch {
+      /* stockage indisponible */
+    }
     const w = p?.field ?? "";
     const c = p?.city ?? "";
     setWhat(w);
@@ -200,6 +211,8 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         <FilterPanel t={t} filters={filters} count={total} hiddenByFrench={hiddenByFrench} onChange={changeFilters} />
 
         {demo && <p className="banner">{o.demo}</p>}
+        {newCount > 0 && <p className="banner ok">{o.newSince.replace("{n}", String(newCount))}</p>}
+        <InstallHint text={o.installIos} close={o.close} />
         {profile === null && (
           <p className="banner ok">{o.noProfile} <Link href={`/${lang}/inscription`}>{t.nav.start} →</Link></p>
         )}

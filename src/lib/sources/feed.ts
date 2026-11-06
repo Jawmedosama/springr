@@ -17,12 +17,15 @@ export interface FeedRequest {
   profile?: (Omit<MatchProfile, "cvText"> & { experienced?: boolean }) | null;
   lang: Lang;
   page?: number;
+  /** Date de la dernière visite, pour compter les nouvelles offres. */
+  since?: string;
 }
 
 export interface FeedResult {
   offers: Offer[];
   total: number;
   hiddenByFrench: number;
+  newCount: number;
   hasMore: boolean;
   demo: boolean;
 }
@@ -47,5 +50,6 @@ export async function getFeed(r: FeedRequest): Promise<FeedResult> {
 
   const page = r.page ?? 0;
   const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((x) => x.offer);
-  return { offers: slice, total: ranked.length, hiddenByFrench, hasMore: (page + 1) * PAGE_SIZE < ranked.length, demo };
+  const newCount = r.since ? kept.filter((o) => o.publishedAt > r.since!).length : 0;
+  return { offers: slice, total: ranked.length, hiddenByFrench, newCount, hasMore: (page + 1) * PAGE_SIZE < ranked.length, demo };
 }

@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "Ça va jobber : remplir mes candidatures",
+  "version": "1.0.0",
+  "description": "Remplit les formulaires de candidature avec ton profil. Tu vérifies et tu envoies toi-même.",
+  "permissions": ["activeTab", "scripting", "storage", "unlimitedStorage"],
+  "action": { "default_popup": "popup.html", "default_title": "Remplir ma candidature" }
+}

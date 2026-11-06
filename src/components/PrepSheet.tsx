@@ -26,9 +26,16 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [mail, setMail] = useState(false);
   const [mailCopied, setMailCopied] = useState(false);
+  const [aiOn, setAiOn] = useState(false);
+  const [interview, setInterview] = useState<string | null>(null);
+  const [interviewBusy, setInterviewBusy] = useState(false);
 
   useEffect(() => {
     loadCvFile().then((f) => setCvFile(f ?? null));
+    fetch("/api/interview")
+      .then((r) => r.json() as Promise<{ enabled: boolean }>)
+      .then((d) => setAiOn(d.enabled))
+      .catch(() => setAiOn(false));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -41,6 +48,22 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
     });
     onSaved?.();
     onClose();
+  }
+
+  async function prepareInterview() {
+    setInterviewBusy(true);
+    try {
+      const res = await fetch("/api/interview", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: offer.title, company: offer.company, description: offer.description, lang }),
+      });
+      const d = (await res.json()) as { text?: string };
+      setInterview(d.text ?? p.interviewError);
+    } catch {
+      setInterview(p.interviewError);
+    }
+    setInterviewBusy(false);
   }
 
   function copyMail() {
@@ -75,7 +98,13 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
 
         <div className="sheet-actions">
           <button className="btn small" onClick={copyMail}>{mailCopied ? p.copied : t.applyMail.copyMail}</button>
+          {aiOn && !spontaneous && (
+            <button className="btn small" onClick={prepareInterview} disabled={interviewBusy}>
+              {interviewBusy ? p.interviewBusy : p.interview}
+            </button>
+          )}
         </div>
+        {interview && <p style={{ whiteSpace: "pre-wrap" }}>{interview}</p>}
 
         <div className="sheet-actions" style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
           {offer.url && offer.url !== "#" && (
