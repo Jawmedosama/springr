@@ -50,6 +50,8 @@ export async function getFeed(r: FeedRequest): Promise<FeedResult> {
 
   const page = r.page ?? 0;
   const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((x) => x.offer);
-  const newCount = r.since ? kept.filter((o) => o.publishedAt > r.since!).length : 0;
+  // Les sources n'écrivent pas leurs dates pareil : on compare des instants, pas du texte.
+  const since = r.since ? Date.parse(r.since) : NaN;
+  const newCount = Number.isNaN(since) ? 0 : kept.filter((o) => Date.parse(o.publishedAt) > since).length;
   return { offers: slice, total: ranked.length, hiddenByFrench, newCount, hasMore: (page + 1) * PAGE_SIZE < ranked.length, demo };
 }
