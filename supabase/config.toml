@@ -3,3 +3,11 @@ project_id = "finepmrbgfirmsjmthhz"
 [auth]
 site_url = "https://springr-two.vercel.app"
 additional_redirect_urls = ["https://springr-two.vercel.app/**"]
+
+[auth.email.template.magic_link]
+subject = "Ton code de connexion · Je inlogcode"
+content_path = "./supabase/templates/login.html"
+
+[auth.email.template.confirmation]
+subject = "Ton code de connexion · Je inlogcode"
+content_path = "./supabase/templates/login.html"

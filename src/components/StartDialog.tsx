@@ -7,8 +7,10 @@ import { regionFromPlace } from "@/lib/belgium";
 import { NO_FILTERS, saveFilters } from "@/lib/filters";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
+
 import { getSupabase } from "@/lib/supabase";
 import type { ContractType, Lang, Region } from "@/lib/types";
+import CodeForm from "./CodeForm";
 
 export type StartMode = "choice" | "login" | "signup" | "guest";
 
@@ -104,7 +106,7 @@ export default function StartDialog({ lang, mode = "choice", onClose }: { lang: 
               <Link className="btn dark block" href={`/${lang}/inscription`} onClick={onClose}>{t.profile.create}</Link>
             </>
           ) : state === "sent" ? (
-            <p className="banner ok">{s.sent}</p>
+            <CodeForm email={email} lang={lang} />
           ) : (
             <form onSubmit={sendLink} style={{ display: "grid", gap: 12 }}>
               <p className="muted" style={{ margin: 0 }}>{view === "login" ? s.loginText : s.signupText}</p>

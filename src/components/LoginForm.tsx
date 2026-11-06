@@ -5,6 +5,7 @@ import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase";
 import type { Lang } from "@/lib/types";
+import CodeForm from "./CodeForm";
 
 export default function LoginForm({ lang }: { lang: Lang }) {
   const t = getDict(lang).auth;
@@ -34,7 +35,7 @@ export default function LoginForm({ lang }: { lang: Lang }) {
       {!getSupabase() ? (
         <p className="banner">{t.unavailable}</p>
       ) : state === "sent" ? (
-        <p className="banner ok">{t.sent}</p>
+        <div className="panel"><CodeForm email={email} lang={lang} /></div>
       ) : (
         <form className="panel" onSubmit={submit}>
           <label>{t.email}
