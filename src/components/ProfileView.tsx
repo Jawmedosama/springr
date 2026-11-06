@@ -9,6 +9,7 @@ import { deleteAccount, signOut } from "@/lib/sync";
 import type { Lang, Profile } from "@/lib/types";
 import { loadTemplate, removeCvFile, resetTemplate } from "@/lib/applyMail";
 import MailSettings from "./MailSettings";
+import SyncStatus from "./SyncStatus";
 import { initials } from "./OfferCard";
 
 export default function ProfileView({ lang }: { lang: Lang }) {
@@ -18,6 +19,7 @@ export default function ProfileView({ lang }: { lang: Lang }) {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [account, setAccount] = useState<string | null>(null);
   const canLogin = Boolean(getSupabase());
+  const [tasteReset, setTasteReset] = useState(false);
 
   useEffect(() => {
     setProfile(store.getProfile());
@@ -91,6 +93,7 @@ export default function ProfileView({ lang }: { lang: Lang }) {
         <Link className="btn" href={`/${lang}/inscription`}>{p.edit}</Link>
       </div>
 
+      <SyncStatus t={t} lang={lang} />
       <div className="form">
         {canLogin && (
           <section className="panel">
@@ -144,12 +147,27 @@ export default function ProfileView({ lang }: { lang: Lang }) {
         <MailSettings t={t} lang={lang} />
 
         <section className="panel">
+          <h3>{t.cvBuilder.title}</h3>
+          <p className="muted" style={{ margin: 0 }}>{t.cvBuilder.lead}</p>
+          <div><Link className="btn small" href={`/${lang}/cv`}>{t.cvBuilder.open}</Link></div>
+        </section>
+
+        <section className="panel">
           <h3>{p.data}</h3>
           <p className="muted" style={{ margin: 0 }}>{account ? t.auth.dataText : p.dataText}</p>
           <div className="sheet-actions">
             <button className="btn small" onClick={exportData}>{p.export}</button>
             <button className="btn small" onClick={exportForExtension}>{p.exportExt}</button>
             <Link className="btn small" href={`/${lang}/extension`}>{p.extensionGuide}</Link>
+            <button
+              className="btn small"
+              onClick={() => {
+                store.resetTaste();
+                setTasteReset(true);
+              }}
+            >
+              {tasteReset ? p.tasteDone : p.tasteReset}
+            </button>
             <button className="btn small" onClick={erase} style={{ color: "var(--bad)" }}>{p.erase}</button>
           </div>
         </section>

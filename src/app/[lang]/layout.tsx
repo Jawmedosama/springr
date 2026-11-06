@@ -73,6 +73,7 @@ export default async function LangLayout({
                 <Link href={`/${lang}/guides/cv-belgique`}>{t.footer.guideCv}</Link>
                 <Link href={`/${lang}/extension`}>{t.footer.extension}</Link>
                 <Link href={`/${lang}/entreprises/publier`}>{t.footer.employers}</Link>
+                <Link href={`/${lang}/avis`}>{t.feedback.title}</Link>
                 <Link href={`/${lang}#faq`}>{t.nav.faq}</Link>
                 <Link href={`/${lang}#tarifs`}>{t.nav.pricing}</Link>
                 <Link href={`/${lang}/profil`}>{t.nav.profile}</Link>

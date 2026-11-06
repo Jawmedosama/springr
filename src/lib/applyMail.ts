@@ -74,6 +74,36 @@ export function mailForOffer(offer: Offer, profile: Profile, lang: Lang): MailTe
   return { subject: fillTemplate(tpl.subject, offer, profile), body: fillTemplate(tpl.body, offer, profile) + phone };
 }
 
+const FOLLOW_UP: Record<Lang, MailTemplate> = {
+  fr: {
+    subject: "Relance : {poste}",
+    body: `Madame, Monsieur,
+
+Je me permets de revenir vers vous au sujet de ma candidature pour le poste de {poste} chez {entreprise}, envoyée il y a quelques jours.
+
+Ce poste m'intéresse toujours et je reste disponible pour en parler avec vous.
+
+Bien à vous,
+{prenom} {nom}`,
+  },
+  nl: {
+    subject: "Opvolging: {poste}",
+    body: `Geachte heer, mevrouw,
+
+Graag kom ik terug op mijn sollicitatie voor de functie van {poste} bij {entreprise}, die ik enkele dagen geleden verstuurde.
+
+Deze functie interesseert me nog steeds en ik licht mijn kandidatuur graag toe.
+
+Met vriendelijke groeten,
+{prenom} {nom}`,
+  },
+};
+
+export function followUpMail(offer: Offer, profile: Profile, lang: Lang): MailTemplate {
+  const tpl = FOLLOW_UP[lang];
+  return { subject: fillTemplate(tpl.subject, offer, profile), body: fillTemplate(tpl.body, offer, profile) };
+}
+
 /* Le PDF du CV reste dans le navigateur (IndexedDB) : il n'est envoyé qu'au moment d'une candidature. */
 
 const DB = "springr";

@@ -1,12 +1,13 @@
 "use client";
 
+import { learn, NO_TASTE, type Taste } from "./taste";
 import type { Application, Offer, Profile } from "./types";
 
 /**
  * Stockage local du prototype (dans le navigateur).
  * À remplacer par Supabase (voir supabase/schema.sql) quand le projet sera en ligne.
  */
-const K = { profile: "springr.profile", apps: "springr.apps", seen: "springr.seen" };
+const K = { profile: "springr.profile", apps: "springr.apps", seen: "springr.seen", taste: "springr.taste" };
 
 /** Délai avant la relance proposée, en jours. */
 export const FOLLOW_UP_DAYS = 7;
@@ -70,6 +71,9 @@ export const store = {
     write(K.seen, []);
     listener?.({ kind: "seenReset" });
   },
+  getTaste: () => read<Taste>(K.taste, NO_TASTE),
+  learnFrom: (offer: Offer, keep: boolean) => write(K.taste, learn(read<Taste>(K.taste, NO_TASTE), offer, keep)),
+  resetTaste: () => write(K.taste, NO_TASTE),
   /** Ajoute l'offre au suivi, ou met à jour la candidature existante. */
   saveOffer: (offer: Offer, patch: Partial<Application> = {}) => {
     const apps = read<Application[]>(K.apps, []);

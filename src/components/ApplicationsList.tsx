@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { downloadFile, loadCvFile } from "@/lib/applyMail";
+import { emailInOffer } from "@/lib/accessible";
+import { downloadFile, followUpMail, loadCvFile } from "@/lib/applyMail";
 import { cityLabel } from "@/lib/belgium";
 import { getDict } from "@/lib/i18n";
 import { store } from "@/lib/store";
 import type { Application, ApplicationStatus, Lang } from "@/lib/types";
 import { initials } from "./OfferCard";
+import SyncStatus from "./SyncStatus";
 
 const STATUSES: ApplicationStatus[] = ["a_postuler", "envoyee", "entretien", "refusee", "acceptee"];
 
@@ -17,6 +19,8 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
   const [apps, setApps] = useState<Application[] | null>(null);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [filter, setFilter] = useState<ApplicationStatus | "all" | "due">("all");
+  const [followUp, setFollowUp] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
@@ -34,15 +38,46 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
     commit(apps.map((x) => (x.offer.id === id ? { ...x, ...patch, updatedAt: new Date().toISOString() } : x)));
   }
 
+  /** Le message de relance, à copier ou à ouvrir dans sa messagerie. */
+  function followUpBox(x: Application) {
+    const profile = store.getProfile();
+    if (!profile) return null;
+    const mail = followUpMail(x.offer, profile, lang);
+    const text = `${mail.subject}\n\n${mail.body}`;
+    return (
+      <div className="panel">
+        <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{text}</p>
+        <div className="sheet-actions">
+          <button
+            className="btn small"
+            onClick={() => {
+              navigator.clipboard?.writeText(text);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            }}
+          >
+            {copied ? t.prep.copied : a.copyFollowUp}
+          </button>
+          <a className="btn small dark" href={`mailto:${emailInOffer(x.offer) ?? ""}?subject=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}`}>{t.applyMail.open}</a>
+        </div>
+      </div>
+    );
+  }
+
   if (!apps) return <main className="page" />;
 
   const isDue = (x: Application) => Boolean(x.remindAt && x.remindAt <= today && ["a_postuler", "envoyee"].includes(x.status));
   const shown = apps.filter((x) => (filter === "all" ? true : filter === "due" ? isDue(x) : x.status === filter));
+  const sent = apps.filter((x) => x.status !== "a_postuler").length;
+  const replies = apps.filter((x) => ["entretien", "refusee", "acceptee"].includes(x.status)).length;
+  const dueCount = apps.filter(isDue).length;
   const kpis = [
-    { n: apps.length, l: a.stats.total, warn: false },
-    { n: apps.filter((x) => x.status !== "a_postuler").length, l: a.stats.sent, warn: false },
-    { n: apps.filter((x) => x.status === "entretien" || x.status === "acceptee").length, l: a.stats.interview, warn: false },
-    { n: apps.filter(isDue).length, l: a.stats.due, warn: true },
+    { n: String(sent), l: a.stats.sent, warn: false },
+    { n: String(replies), l: a.stats.replies, warn: false },
+    { n: String(apps.filter((x) => x.status === "entretien" || x.status === "acceptee").length), l: a.stats.interview, warn: false },
+    { n: String(apps.filter((x) => x.status === "refusee").length), l: a.stats.refused, warn: false },
+    { n: sent ? `${Math.round((replies / sent) * 100)} %` : "—", l: a.stats.rate, warn: false },
+    { n: String(dueCount), l: a.stats.due, warn: true },
   ];
 
   return (
@@ -51,6 +86,8 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
         <h1>{a.title}</h1>
         <p>{a.lead}</p>
       </div>
+
+      <SyncStatus t={t} lang={lang} />
 
       {apps.length === 0 ? (
         <div className="empty">
@@ -67,9 +104,16 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
             </p>
           )}
 
+          {dueCount > 0 && (
+            <p className="banner">
+              {a.dueBanner.replace("{n}", String(dueCount))}{" "}
+              <button className="link-btn" onClick={() => setFilter("due")}>{a.dueShow}</button>
+            </p>
+          )}
+
           <div className="kpis">
             {kpis.map((k) => (
-              <div key={k.l} className={k.warn && k.n > 0 ? "kpi warn" : "kpi"}><b>{k.n}</b><span>{k.l}</span></div>
+              <div key={k.l} className={k.warn && dueCount > 0 ? "kpi warn" : "kpi"}><b>{k.n}</b><span>{k.l}</span></div>
             ))}
           </div>
 
@@ -109,11 +153,15 @@ export default function ApplicationsList({ lang }: { lang: Lang }) {
                       <a className="btn small dark" href={x.offer.url} target="_blank" rel="noreferrer">{a.openAd} ↗</a>
                     )}
                     {cvFile && <button className="btn small" onClick={() => downloadFile(cvFile)}>{t.prep.downloadCv}</button>}
+                    {x.status === "envoyee" && (
+                      <button className={due ? "btn small brand" : "btn small"} onClick={() => setFollowUp(followUp === x.offer.id ? null : x.offer.id)}>{a.followUp}</button>
+                    )}
                     <button className="btn small ghost" onClick={() => {
                       store.removeApp(x.offer.id);
                       setApps(store.getApps());
                     }}>{a.remove}</button>
                   </div>
+                  {followUp === x.offer.id && followUpBox(x)}
                   <textarea
                     aria-label={a.notes}
                     placeholder={a.notesPlaceholder}

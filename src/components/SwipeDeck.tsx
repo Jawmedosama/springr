@@ -7,6 +7,7 @@ import { activeCount, feedQuery, loadFilters, NO_FILTERS, saveFilters, type Filt
 import { getDict } from "@/lib/i18n";
 import { matchOffer, type MatchResult } from "@/lib/match";
 import { store } from "@/lib/store";
+import { minutes, travelTo, type Geo } from "@/lib/travel";
 import type { Lang, Offer, Profile } from "@/lib/types";
 import FilterPanel from "./FilterPanel";
 import InstallHint from "./InstallHint";
@@ -47,6 +48,8 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [hiddenByFrench, setHiddenByFrench] = useState(0);
   const [newCount, setNewCount] = useState(0);
   const lastVisit = useRef<string | undefined>(undefined);
+  const [geo, setGeo] = useState<Geo | null>(null);
+  const [gone, setGone] = useState<string | null>(null);
 
   const fetchPage = useCallback(
     (w: string, c: string, f: Filters, p: Profile | null, n: number) =>
@@ -58,6 +61,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           lang,
           page: n,
           since: lastVisit.current,
+          taste: store.getTaste(),
           profile: p && {
             contracts: p.contracts,
             region: p.region,
@@ -101,6 +105,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     } catch {
       /* stockage indisponible */
     }
+    if (p) fetch("/geo-be.json").then((r) => r.json() as Promise<Geo>).then(setGeo).catch(() => setGeo(null));
     const w = p?.field ?? "";
     const c = p?.city ?? "";
     setWhat(w);
@@ -112,7 +117,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
   // Le serveur a déjà filtré et classé toutes les offres : on garde son ordre.
   const ranked: Ranked[] = useMemo(
-    () => (offers ?? []).filter((x) => !seen.has(x.id)).map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang) : null })),
+    () => (offers ?? []).filter((x) => !seen.has(x.id)).map((offer) => ({ offer, m: profile ? matchOffer(offer, profile, lang, store.getTaste()) : null })),
     [offers, profile, seen, lang],
   );
 
@@ -123,6 +128,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
       if (!current || leaving) return;
       setLeaving(keep ? 1 : -1);
       setTimeout(() => {
+        store.learnFrom(current.offer, keep);
         if (keep) {
           store.saveOffer(current.offer);
           setToast(o.saved);
@@ -179,6 +185,22 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     load(what, where, filters, profile ?? null);
   }
 
+  const trip = (offer: Offer) => (profile && geo ? travelTo(offer, profile, geo) : null);
+  const tripLabel = (offer: Offer) => {
+    const x = trip(offer);
+    return x ? o.tripShort.replace("{km}", String(x.km)).replace("{car}", minutes(x.car)) : undefined;
+  };
+
+  /** Vérifie l'annonce à l'ouverture : seule une réponse claire du site la signale. */
+  function openDetail(r: Ranked) {
+    setDetail(r);
+    if (!r.offer.url || r.offer.url === "#") return;
+    fetch(`/api/check-link?url=${encodeURIComponent(r.offer.url)}`)
+      .then((x) => x.json() as Promise<{ gone: boolean }>)
+      .then((d) => d.gone && setGone(r.offer.id))
+      .catch(() => undefined);
+  }
+
   function openPrep(offer: Offer) {
     if (!profile) {
       window.location.href = `/${lang}/inscription`;
@@ -195,7 +217,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   };
 
   return (
-    <main className="page">
+    <main className="page feed-page">
       <div className="page-head">
         <h1>{o.title}</h1>
         <p>{o.subtitle}</p>
@@ -212,7 +234,6 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
         {demo && <p className="banner">{o.demo}</p>}
         {newCount > 0 && <p className="banner ok">{o.newSince.replace("{n}", String(newCount))}</p>}
-        <InstallHint text={o.installIos} close={o.close} />
         {profile === null && (
           <p className="banner ok">{o.noProfile} <Link href={`/${lang}/inscription`}>{t.nav.start} →</Link></p>
         )}
@@ -236,6 +257,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
                   t={t}
                   lang={lang}
                   score={r.m?.score}
+                  travel={tripLabel(r.offer)}
                   className={i === arr.length - 1 ? "behind" : "behind2"}
                 />
               ))}
@@ -245,6 +267,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
                 t={t}
                 lang={lang}
                 score={current.m?.score}
+                travel={tripLabel(current.offer)}
                 className="front"
                 style={frontStyle}
                 handlers={{
@@ -260,7 +283,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
                     else if (drag < -THRESHOLD) decide(false);
                     else {
                       setDrag(0);
-                      if (moved < 6) setDetail(current);
+                      if (moved < 6) openDetail(current);
                     }
                   },
                   onPointerCancel: () => { start.current = null; setDrag(0); },
@@ -279,7 +302,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
             <div className="deck-actions">
               <button className="icon-btn pass" onClick={() => decide(false)} aria-label={o.pass} title={`${o.pass} (←)`}><IconX /></button>
-              <button className="icon-btn sm" onClick={() => setDetail(current)} aria-label={o.details} title={o.details}><IconInfo /></button>
+              <button className="icon-btn sm" onClick={() => openDetail(current)} aria-label={o.details} title={o.details}><IconInfo /></button>
               <button className="icon-btn sm" onClick={() => openPrep(current.offer)} aria-label={o.prepare} title={o.prepare}><IconPen /></button>
               <button className="icon-btn keep" onClick={() => decide(true)} aria-label={o.like} title={`${o.like} (→)`}><IconHeart /></button>
             </div>
@@ -291,6 +314,8 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
           </>
         )}
       </div>
+
+      <div style={{ marginTop: 16 }}><InstallHint text={o.installIos} close={o.close} /></div>
 
       {offers !== null && hasMore && (
         <button className="btn block" style={{ marginTop: 16 }} disabled={more} onClick={loadMore}>{more ? o.loading : o.more}</button>
@@ -312,7 +337,26 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
                 <button className="close" onClick={() => setDetail(null)} aria-label={o.close}>✕</button>
               </div>
             </div>
-            {detail.offer.salary && <p className="salary" style={{ margin: 0 }}>{detail.offer.salary}</p>}
+            {gone === detail.offer.id && <p className="banner">{o.maybeExpired}</p>}
+            <dl className="dl">
+              {detail.offer.salary && (<><dt>{o.salary}</dt><dd className="salary">{detail.offer.salary}</dd></>)}
+              <dt>{o.contract}</dt>
+              <dd>{t.contracts[detail.offer.contract]}</dd>
+              {detail.offer.regime && (<><dt>{o.regime}</dt><dd>{detail.offer.regime}</dd></>)}
+              {trip(detail.offer) && (
+                <>
+                  <dt>{o.distance}</dt>
+                  <dd>
+                    {o.tripLong
+                      .replace("{km}", String(trip(detail.offer)?.km))
+                      .replace("{car}", minutes(trip(detail.offer)?.car ?? 0))
+                      .replace("{transit}", minutes(trip(detail.offer)?.transit ?? 0))}
+                  </dd>
+                </>
+              )}
+              <dt>{o.published}</dt>
+              <dd>{new Date(detail.offer.publishedAt).toLocaleDateString(lang === "nl" ? "nl-BE" : "fr-BE")}</dd>
+            </dl>
             {detail.m && detail.m.reasons.length + detail.m.warnings.length > 0 && (
               <div className="panel" style={{ background: "var(--bg)" }}>
                 <h3>{o.why}</h3>
@@ -324,7 +368,12 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
             )}
             <p style={{ whiteSpace: "pre-line", margin: 0 }}>{detail.offer.description}</p>
             {detail.offer.description.trim().endsWith("…") && <p className="muted small" style={{ margin: 0 }}>{o.excerpt}</p>}
-            <p className="muted small" style={{ margin: 0 }}>{o.source} : {detail.offer.source}</p>
+            <p className="muted small" style={{ margin: 0 }}>
+              {o.source} : {detail.offer.source}
+              {detail.offer.altSources?.map((a) => (
+                <span key={a.url}> · <a href={a.url} target="_blank" rel="noreferrer">{a.source}</a></span>
+              ))}
+            </p>
             <SearchElsewhere t={t} what={detail.offer.title} where={cityLabel(detail.offer.city, lang)} />
             <div className="sheet-actions">
               {detail.offer.url && detail.offer.url !== "#" && (

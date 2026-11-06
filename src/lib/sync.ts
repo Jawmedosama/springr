@@ -113,8 +113,12 @@ const fromAppRow = (r: AppRow): Application => ({
 let userId: string | null = null;
 const timers: Partial<Record<"profile" | "apps" | "seen", ReturnType<typeof setTimeout>>> = {};
 
+let lastError: string | null = null;
+
 function report(what: string, error: { message: string } | null | undefined) {
-  if (error) console.error(`Synchronisation ${what} : ${error.message}`);
+  if (!error) return;
+  lastError = what;
+  console.error(`Synchronisation ${what} : ${error.message}`);
 }
 
 async function pushProfile(id: string) {
@@ -169,7 +173,10 @@ export async function attach(id: string, email: string): Promise<boolean> {
     sb.from("applications").select("*").eq("user_id", id).returns<AppRow[]>(),
     sb.from("seen_offers").select("offer_id").eq("user_id", id).returns<{ offer_id: string }[]>(),
   ]);
-  if (profile.error || apps.error || seen.error) return false;
+  if (profile.error || apps.error || seen.error) {
+    report("lecture", profile.error ?? apps.error ?? seen.error);
+    return false;
+  }
 
   const hadProfile = Boolean(store.getProfile());
   const localApps = store.getApps();
@@ -188,6 +195,16 @@ export async function attach(id: string, email: string): Promise<boolean> {
   setStoreListener(onChange);
   await pushAll(id);
   return hadProfile !== Boolean(store.getProfile()) || merged.size !== localApps.length;
+}
+
+/** Bouton « Synchroniser maintenant » : relit le compte et lui renvoie tout. */
+export async function syncNow(): Promise<{ ok: boolean; changed: boolean; count: number }> {
+  const { data } = (await getSupabase()?.auth.getSession()) ?? {};
+  const user = data?.session?.user;
+  if (!user) return { ok: false, changed: false, count: 0 };
+  lastError = null;
+  const changed = await attach(user.id, user.email ?? "");
+  return { ok: !lastError, changed, count: store.getApps().length };
 }
 
 export function detach() {

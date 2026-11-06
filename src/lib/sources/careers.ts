@@ -29,6 +29,18 @@ const BOARDS: { ats: "greenhouse" | "lever" | "recruitee" | "smartrecruiters"; s
   { ats: "greenhouse", slug: "elastic", name: "Elastic" },
   { ats: "greenhouse", slug: "hellofresh", name: "HelloFresh" },
   { ats: "greenhouse", slug: "databricks", name: "Databricks" },
+  { ats: "smartrecruiters", slug: "Besix", name: "BESIX" },
+  { ats: "smartrecruiters", slug: "Devoteam", name: "Devoteam" },
+  { ats: "smartrecruiters", slug: "Aviko", name: "Aviko" },
+  { ats: "smartrecruiters", slug: "Wise", name: "Wise" },
+  { ats: "smartrecruiters", slug: "ServiceNow", name: "ServiceNow" },
+  { ats: "recruitee", slug: "televic", name: "Televic" },
+  { ats: "recruitee", slug: "itsme", name: "itsme" },
+  { ats: "recruitee", slug: "isabelgroup", name: "Isabel Group" },
+  { ats: "recruitee", slug: "msf", name: "Médecins Sans Frontières" },
+  { ats: "recruitee", slug: "poppy", name: "Poppy" },
+  { ats: "recruitee", slug: "bunq", name: "bunq" },
+  { ats: "lever", slug: "deliverect", name: "Deliverect" },
 ];
 
 const IN_BELGIUM = /belgi|belgique|belgië/i;
@@ -93,10 +105,12 @@ async function recruitee(slug: string): Promise<Raw[]> {
 }
 
 async function smartrecruiters(slug: string): Promise<Raw[]> {
-  const d = await get<{ content?: { id: string; name: string; releasedDate?: string; location?: { city?: string }; typeOfEmployment?: { label?: string } }[] }>(
-    `https://api.smartrecruiters.com/v1/companies/${slug}/postings?country=be&limit=100`,
-  );
-  return (d?.content ?? []).map((j) => ({
+  type Page = { totalFound?: number; content?: { id: string; name: string; releasedDate?: string; location?: { city?: string }; typeOfEmployment?: { label?: string } }[] };
+  const read = (offset: number) => get<Page>(`https://api.smartrecruiters.com/v1/companies/${slug}/postings?country=be&limit=100&offset=${offset}`);
+  const first = await read(0);
+  const offsets = Array.from({ length: Math.min(4, Math.ceil((first?.totalFound ?? 0) / 100) - 1) }, (_, i) => (i + 1) * 100);
+  const rest = await Promise.all(offsets.map(read));
+  return [first, ...rest].flatMap((d) => d?.content ?? []).map((j) => ({
     id: j.id,
     title: j.name,
     place: j.location?.city ?? "",

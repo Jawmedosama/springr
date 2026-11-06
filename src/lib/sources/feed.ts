@@ -1,5 +1,6 @@
 import { matchesFilters, type Filters } from "../filters";
 import { matchOffer } from "../match";
+import type { Taste } from "../taste";
 import type { ContractType, Lang, MatchProfile, Offer, Province, Region } from "../types";
 import { getAllOffers } from "./index";
 
@@ -19,6 +20,8 @@ export interface FeedRequest {
   page?: number;
   /** Date de la dernière visite, pour compter les nouvelles offres. */
   since?: string;
+  /** Préférences apprises dans le navigateur : utilisées pour trier, jamais conservées. */
+  taste?: Taste | null;
 }
 
 export interface FeedResult {
@@ -28,11 +31,12 @@ export interface FeedResult {
   newCount: number;
   hasMore: boolean;
   demo: boolean;
+  removed: { duplicates: number; expired: number };
 }
 
 /** Filtre puis classe toutes les offres, et seulement ensuite découpe en pages. */
 export async function getFeed(r: FeedRequest): Promise<FeedResult> {
-  const { offers, agencies, demo } = await getAllOffers({ ...r, all: true });
+  const { offers, agencies, demo, removed } = await getAllOffers({ ...r, all: true });
   const all = [...offers, ...agencies];
   const kept = all.filter((o) => matchesFilters(o, r.filters));
   const hiddenByFrench = r.filters.lang === "fr" ? all.filter((o) => matchesFilters(o, { ...r.filters, lang: null })).length - kept.length : 0;
@@ -40,7 +44,7 @@ export async function getFeed(r: FeedRequest): Promise<FeedResult> {
   const p = r.profile;
   const forScore = p ? { ...p, cvText: p.experienced ? "x".repeat(400) : "" } : null;
   const ranked = kept
-    .map((offer) => ({ offer, score: forScore ? matchOffer(offer, forScore, r.lang).score : 0 }))
+    .map((offer) => ({ offer, score: forScore ? matchOffer(offer, forScore, r.lang, r.taste).score : 0 }))
     .sort(
       (a, b) =>
         b.score - a.score ||
@@ -53,5 +57,5 @@ export async function getFeed(r: FeedRequest): Promise<FeedResult> {
   // Les sources n'écrivent pas leurs dates pareil : on compare des instants, pas du texte.
   const since = r.since ? Date.parse(r.since) : NaN;
   const newCount = Number.isNaN(since) ? 0 : kept.filter((o) => Date.parse(o.publishedAt) > since).length;
-  return { offers: slice, total: ranked.length, hiddenByFrench, newCount, hasMore: (page + 1) * PAGE_SIZE < ranked.length, demo };
+  return { offers: slice, total: ranked.length, hiddenByFrench, newCount, hasMore: (page + 1) * PAGE_SIZE < ranked.length, demo, removed };
 }

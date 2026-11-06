@@ -10,30 +10,76 @@ function normalize(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/\p{M}/gu, "")
     .replace(/[·()\-–,./]/g, " ")
-    .replace(/\b(h|f|m|x)\b/g, "")
+    .replace(/\b(h|f|m|v|x)\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-/** Deux offres sont des doublons si l'entreprise, le titre et la ville normalisés sont identiques. */
+const LEGAL_FORM = /\b(sa|nv|srl|bv|sprl|bvba|asbl|vzw|scrl|cvba|sas|gmbh|ltd|inc|belgium|belgique|belgie)\b/g;
+const SMALL_WORDS = new Set(["de", "du", "la", "le", "les", "des", "en", "et", "in", "the", "and", "van", "voor", "een", "un", "une", "het"]);
+
+const companyKey = (s: string) => normalize(s).replace(LEGAL_FORM, "").replace(/\s+/g, " ").trim();
+const titleWords = (s: string) => new Set(normalize(s).split(" ").filter((w) => w.length > 1 && !SMALL_WORDS.has(w)));
+
+/** Titres presque identiques : au moins 80 % de mots communs. */
+function sameTitle(a: Set<string>, b: Set<string>): boolean {
+  if (!a.size || !b.size) return false;
+  const common = [...a].filter((w) => b.has(w)).length;
+  return common / (a.size + b.size - common) >= 0.8;
+}
+
+/** Plus une fiche donne d'informations, plus elle a de chances d'être gardée. */
+function richness(o: Offer): number {
+  return (
+    (o.source === "Le Forem" ? 3 : 0) +
+    Math.min(5, o.description.length / 200) +
+    (o.salary ? 3 : 0) +
+    (o.regime ? 1 : 0) +
+    (o.postcode ? 1 : 0) +
+    (o.contract !== "nc" ? 1 : 0)
+  );
+}
+
+function merge(a: Offer, b: Offer): Offer {
+  const [keep, other] = richness(b) > richness(a) ? [b, a] : [a, b];
+  const others = [...(keep.altSources ?? []), ...(other.altSources ?? [])];
+  if (other.url !== keep.url) others.push({ source: other.source, url: other.url });
+  const alts = [...new Map(others.filter((x) => x.url !== keep.url).map((x) => [x.url, x])).values()].slice(0, 4);
+  return { ...keep, salary: keep.salary ?? other.salary, altSources: alts.length ? alts : undefined };
+}
+
+/** Même entreprise, même ville et titre très proche : c'est la même offre, sur plusieurs sites. */
 export function dedupe(offers: Offer[]): Offer[] {
-  const seen = new Map<string, Offer>();
+  const buckets = new Map<string, { words: Set<string>; offer: Offer }[]>();
+  const noCompany: Offer[] = [];
   for (const o of offers) {
-    const key = [normalize(o.company), normalize(o.title), normalize(cityLabel(o.city, "fr"))].join("|");
-    const prev = seen.get(key);
-    // On garde l'offre la plus récente, ou celle d'une source officielle.
-    const official = (x: Offer) => x.source === "Le Forem";
-    const better =
-      !prev ||
-      (official(o) && !official(prev)) ||
-      (official(o) === official(prev) && o.publishedAt > prev.publishedAt);
-    if (better) {
-      seen.set(key, o);
+    const company = companyKey(o.company);
+    if (!company) {
+      noCompany.push(o);
+      continue;
     }
+    const key = `${company}|${normalize(cityLabel(o.city, "fr"))}`;
+    const bucket = buckets.get(key) ?? [];
+    buckets.set(key, bucket);
+    const words = titleWords(o.title);
+    const twin = bucket.find((x) => x.offer.id === o.id || sameTitle(x.words, words));
+    if (twin) twin.offer = twin.offer.id === o.id ? twin.offer : merge(twin.offer, o);
+    else bucket.push({ words, offer: o });
   }
-  return [...seen.values()];
+  const byId = new Map(noCompany.map((o) => [o.id, o]));
+  return [...[...buckets.values()].flat().map((x) => x.offer), ...byId.values()];
+}
+
+/** Âge maximal quand la source n'annonce pas de fin. Les pages carrières sont lues en direct : une offre retirée n'y est plus. */
+const MAX_AGE_DAYS: Record<string, number> = { "Le Forem": 90, "Page carrières": Infinity };
+const DEFAULT_MAX_AGE = 60;
+
+export function isExpired(o: Offer, now = Date.now()): boolean {
+  if (o.expiresAt) return new Date(`${o.expiresAt.slice(0, 10)}T23:59:59Z`).getTime() < now;
+  const age = (now - new Date(o.publishedAt).getTime()) / 86400000;
+  return age > (MAX_AGE_DAYS[o.source] ?? DEFAULT_MAX_AGE);
 }
 
 /** Agences d'intérim, de recrutement, sites d'emploi et organismes de formation : on ne garde que les offres d'entreprises. */
@@ -78,6 +124,8 @@ export interface OffersResult {
   demo: boolean;
   /** Offres d'intermédiaires, écartées par défaut : l'utilisateur peut choisir de les afficher. */
   agencies: Offer[];
+  /** Offres retirées avant l'affichage. */
+  removed: { duplicates: number; expired: number };
 }
 
 const FLEXI = /\bflexi\b|\bflexi[- ]?jobs?\b/i;
@@ -93,10 +141,12 @@ function inferContract(o: Offer): Offer {
 
 function finish(results: PromiseSettledResult<Offer[]>[]): OffersResult {
   const live = results.flatMap((r) => (r.status === "fulfilled" ? r.value : [])).map(inferContract);
-  const all = live.length === 0 ? SAMPLE_OFFERS : dedupe(live);
+  const fresh = live.filter((o) => !isExpired(o));
+  const all = live.length === 0 ? SAMPLE_OFFERS : dedupe(fresh);
   const offers = all.filter((o) => !isIntermediary(o));
   const agencies = all.filter(isIntermediary).map((o) => ({ ...o, agency: true }));
-  return { offers, agencies, demo: live.length === 0 };
+  const removed = { duplicates: live.length ? fresh.length - all.length : 0, expired: live.length - fresh.length };
+  return { offers, agencies, removed, demo: live.length === 0 };
 }
 
 /** Jooble et Careerjet, intérim compris : le tri se fait ensuite avec les filtres. */

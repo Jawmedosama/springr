@@ -28,19 +28,22 @@ interface Props {
   t: Dict;
   lang: Lang;
   score?: number;
+  /** Trajet estimé, déjà rédigé. */
+  travel?: string;
   className?: string;
   style?: React.CSSProperties;
   children?: React.ReactNode;
   handlers?: React.HTMLAttributes<HTMLElement>;
 }
 
-export default function OfferCard({ offer, t, lang, score, className = "", style, children, handlers }: Props) {
+export default function OfferCard({ offer, t, lang, score, travel, className = "", style, children, handlers }: Props) {
   const city = cityLabel(offer.city, lang);
   return (
     <article className={`card-job ${className}`} style={style} {...handlers}>
       <div className="card-top">
         <div className="card-tags">
           <span className="tag">{t.contracts[offer.contract]}</span>
+          {offer.regime && <span className="tag line">{offer.regime}</span>}
           <span className="tag line">{ago(offer.publishedAt, t)}</span>
           {offer.agency && <span className="tag warn">{t.offers.agency}</span>}
         </div>
@@ -55,6 +58,7 @@ export default function OfferCard({ offer, t, lang, score, className = "", style
         </div>
       </div>
       {offer.salary && <span className="salary">{offer.salary}</span>}
+      {travel && <span className="muted small">{travel}</span>}
       <p className="card-desc">{offer.description}</p>
       {children}
       <div className="card-foot">

@@ -45,7 +45,7 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overscroll-behavior-x: none; }
 body {
   background: var(--bg);
   color: var(--ink);
@@ -106,7 +106,7 @@ p { margin: 0 0 10px; }
     background: var(--surface); border-top: 1px solid var(--line);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
   }
-  .tabbar a { display: grid; justify-items: center; gap: 2px; text-decoration: none; font-size: 0.72rem; font-weight: 600; color: var(--muted); padding: 4px; }
+  .tabbar a { display: grid; justify-items: center; gap: 2px; text-decoration: none; font-size: 0.72rem; line-height: 1.15; text-align: center; font-weight: 600; color: var(--muted); padding: 4px; }
   .tabbar a.on { color: var(--brand); }
   .tabbar svg { width: 22px; height: 22px; }
 }
@@ -312,7 +312,12 @@ p { margin: 0 0 10px; }
 .feed { display: grid; gap: 18px; }
 .searchbar { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 8px; }
 .searchbar input { border: none; background: var(--bg); }
-@media (max-width: 560px) { .searchbar { grid-template-columns: 1fr 1fr; } .searchbar .btn { grid-column: span 2; } }
+@media (max-width: 560px) {
+  .searchbar { grid-template-columns: 1fr 1fr auto; gap: 6px; padding: 6px; }
+  .searchbar input { min-width: 0; padding-inline: 10px; }
+  .searchbar .btn { padding-inline: 12px; }
+  .feed-page .page-head { display: none; }
+}
 .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
 .filters::-webkit-scrollbar { display: none; }
 .chip {

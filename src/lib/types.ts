@@ -27,6 +27,14 @@ export interface Offer {
   province?: Province;
   /** Secteur d'activité, quand la source le donne. */
   sector?: string;
+  /** Temps plein, temps partiel… */
+  regime?: string;
+  lat?: number;
+  lon?: number;
+  /** Fin de diffusion annoncée par la source. */
+  expiresAt?: string;
+  /** La même offre, trouvée sur d'autres sites. */
+  altSources?: { source: string; url: string }[];
   contract: ContractType;
   description: string;
   language?: Lang | "de" | "en";

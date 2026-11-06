@@ -92,7 +92,10 @@ export default function PrepSheet({ offer, profile, lang, t, spontaneous, onClos
               <button className="btn small" onClick={() => downloadFile(cvFile)}>{p.downloadCv}</button>
             </>
           ) : (
-            <Link href={`/${lang}/profil`}>{p.addCv}</Link>
+            <>
+              <Link href={`/${lang}/profil`}>{p.addCv}</Link>
+              <Link href={`/${lang}/cv`}>{t.cvBuilder.open}</Link>
+            </>
           )}
         </div>
 
