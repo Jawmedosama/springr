@@ -7,7 +7,7 @@ export function isLang(v: string): v is Lang {
 }
 
 const fr = {
-  brand: "Springr",
+  brand: "Ça va jobber",
   nav: {
     offers: "Pour toi",
     companies: "Entreprises",
@@ -23,7 +23,7 @@ const fr = {
     kicker: "Pour les 16 à 35 ans qui vivent en Belgique",
     title1: "Le bon job",
     title2: "en un swipe.",
-    lead: "Jobs étudiants, stages, alternance, CDD et CDI : Springr rassemble les offres belges, les classe selon ton profil et prépare tes candidatures avec toi.",
+    lead: "Jobs étudiants, stages, alternance, CDD et CDI : Ça va jobber rassemble les offres belges, les classe selon ton profil et prépare tes candidatures avec toi.",
     cta: "Commencer gratuitement",
     secondary: "Voir les offres",
     note: "Gratuit, sans carte bancaire. En français et en néerlandais.",
@@ -40,7 +40,7 @@ const fr = {
       ["Swipe ton feed", "Les offres arrivent triées par score de match. À droite tu gardes, à gauche tu passes."],
       ["Postule vite", "Ton CV et ton mail type sont prêts. Tu ouvres l'annonce, tu envoies, on suit."],
     ],
-    featKicker: "Ce que fait Springr",
+    featKicker: "Ce que fait Ça va jobber",
     featTitle: "Tout ta recherche d'emploi, au même endroit.",
     feed: {
       tag: "Feed « Pour toi »",
@@ -51,7 +51,7 @@ const fr = {
     hidden: {
       tag: "Entreprises qui recrutent",
       title: "Vise les entreprises avant qu'elles publient.",
-      text: "Springr repère les entreprises qui publient beaucoup d'offres près de chez toi. Envoie-leur une candidature spontanée, préparée par l'IA, avant tout le monde.",
+      text: "Ça va jobber repère les entreprises qui publient beaucoup d'offres près de chez toi. Envoie-leur une candidature spontanée, préparée par l'IA, avant tout le monde.",
       badge: "Recrute activement",
     },
     ai: {
@@ -71,16 +71,16 @@ const fr = {
       ["Score de match", "Chaque offre notée selon ton profil, avec les raisons."],
       ["Candidature spontanée", "Ton mail type pour les entreprises qui recrutent, même sans offre."],
       ["Suivi des candidatures", "Statut, notes et historique de chaque candidature."],
-      ["Relance à 7 jours", "Sans réponse, Springr te rappelle de relancer."],
+      ["Relance à 7 jours", "Sans réponse, Ça va jobber te rappelle de relancer."],
       ["Bilingue", "Toute l'interface en français et en néerlandais."],
       ["Résidence vérifiée", "Réservé aux 16 à 35 ans qui vivent en Belgique."],
     ],
     compare: {
       title: "Postuler, en beaucoup plus rapide.",
-      oldTag: "Sans Springr",
+      oldTag: "Sans Ça va jobber",
       oldTime: "± 20 min par candidature",
       old: ["Chercher sur cinq sites différents", "Tomber sur des annonces d'agences", "Réécrire le même message à chaque fois", "Oublier qui relancer et quand"],
-      newTag: "Avec Springr",
+      newTag: "Avec Ça va jobber",
       newTime: "± 2 min par candidature",
       new: ["Un feed unique, trié pour toi", "Agences signalées et masquables", "Mail type rempli pour chaque offre", "Rappel de relance automatique"],
     },
@@ -120,7 +120,7 @@ const fr = {
     },
     faqTitle: "Questions fréquentes",
     faq: [
-      ["C'est quoi Springr ?", "Une plateforme d'emploi pour les 16 à 35 ans qui vivent en Belgique. Elle rassemble les offres de plusieurs sources, les classe selon ton profil et t'aide à postuler."],
+      ["C'est quoi Ça va jobber ?", "Une plateforme d'emploi pour les 16 à 35 ans qui vivent en Belgique. Elle rassemble les offres de plusieurs sources, les classe selon ton profil et t'aide à postuler."],
       ["C'est vraiment gratuit ?", "Oui. Chercher, swiper, préparer et suivre tes candidatures est gratuit, sans carte bancaire."],
       ["D'où viennent les offres ?", "Des données ouvertes du Forem, d'Adzuna Belgique et de pages carrières d'entreprises. Chaque offre renvoie vers l'annonce d'origine."],
       ["Pourquoi vérifier mon adresse ?", "Le service est réservé aux personnes qui résident en Belgique. Ton code postal sert aussi à te proposer des offres proches de chez toi."],
@@ -135,7 +135,7 @@ const fr = {
     title: "Crée ton profil",
     intro: "Ce service est réservé aux personnes de 16 à 35 ans qui résident en Belgique. Ton adresse sert uniquement à vérifier ta résidence et à te proposer des offres proches.",
     import: {
-      lead: "Springr remplit le formulaire, tu n'as plus qu'à confirmer ou corriger.",
+      lead: "Ça va jobber remplit le formulaire, tu n'as plus qu'à confirmer ou corriger.",
       button: "Déposer mon CV",
       replace: "Remplacer",
       saved: "CV ajouté",
@@ -329,7 +329,7 @@ const fr = {
     subject: "Candidature :",
     sent: "J'ai postulé, suivante",
     skip: "Passer",
-    review: "Springr n'envoie rien à ta place : postule sur le site de l'annonce.",
+    review: "Ça va jobber n'envoie rien à ta place : postule sur le site de l'annonce.",
     empty: "Aucune offre à traiter. Garde des offres dans ton feed, elles arriveront ici.",
     done: "Terminé : {n} candidature(s) envoyée(s). Pense à relancer dans 7 jours.",
   },
@@ -385,7 +385,7 @@ const fr = {
 export type Dict = typeof fr;
 
 const nl: Dict = {
-  brand: "Springr",
+  brand: "Ça va jobber",
   nav: {
     offers: "Voor jou",
     companies: "Bedrijven",
@@ -401,7 +401,7 @@ const nl: Dict = {
     kicker: "Voor 16- tot 35-jarigen die in België wonen",
     title1: "De juiste job",
     title2: "in één swipe.",
-    lead: "Studentenjobs, stages, duaal leren, tijdelijke en vaste contracten: Springr verzamelt Belgische vacatures, rangschikt ze volgens jouw profiel en bereidt je sollicitaties met je voor.",
+    lead: "Studentenjobs, stages, duaal leren, tijdelijke en vaste contracten: Ça va jobber verzamelt Belgische vacatures, rangschikt ze volgens jouw profiel en bereidt je sollicitaties met je voor.",
     cta: "Gratis beginnen",
     secondary: "Bekijk vacatures",
     note: "Gratis, zonder bankkaart. In het Nederlands en het Frans.",
@@ -418,7 +418,7 @@ const nl: Dict = {
       ["Swipe je feed", "Vacatures komen binnen gesorteerd op matchscore. Rechts bewaar je, links sla je over."],
       ["Solliciteer snel", "Je cv en standaardmail staan klaar. Jij opent de vacature, verstuurt, wij volgen op."],
     ],
-    featKicker: "Wat Springr doet",
+    featKicker: "Wat Ça va jobber doet",
     featTitle: "Je hele zoektocht naar werk, op één plek.",
     feed: {
       tag: "Feed « Voor jou »",
@@ -429,7 +429,7 @@ const nl: Dict = {
     hidden: {
       tag: "Bedrijven die aanwerven",
       title: "Mik op bedrijven nog voor ze publiceren.",
-      text: "Springr spoort bedrijven op die veel vacatures in je buurt publiceren. Stuur hen een spontane sollicitatie, voorbereid door AI, vóór iedereen.",
+      text: "Ça va jobber spoort bedrijven op die veel vacatures in je buurt publiceren. Stuur hen een spontane sollicitatie, voorbereid door AI, vóór iedereen.",
       badge: "Werft actief aan",
     },
     ai: {
@@ -449,16 +449,16 @@ const nl: Dict = {
       ["Matchscore", "Elke vacature gescoord volgens je profiel, met de redenen."],
       ["Spontane sollicitatie", "Je standaardmail voor bedrijven die aanwerven, ook zonder vacature."],
       ["Sollicitaties opvolgen", "Status, notities en geschiedenis van elke sollicitatie."],
-      ["Opvolging na 7 dagen", "Geen antwoord? Springr herinnert je eraan op te volgen."],
+      ["Opvolging na 7 dagen", "Geen antwoord? Ça va jobber herinnert je eraan op te volgen."],
       ["Tweetalig", "De hele interface in het Nederlands en het Frans."],
       ["Woonplaats gecontroleerd", "Voorbehouden aan 16- tot 35-jarigen die in België wonen."],
     ],
     compare: {
       title: "Solliciteren, veel sneller.",
-      oldTag: "Zonder Springr",
+      oldTag: "Zonder Ça va jobber",
       oldTime: "± 20 min per sollicitatie",
       old: ["Zoeken op vijf verschillende sites", "Botsen op advertenties van uitzendkantoren", "Telkens hetzelfde bericht herschrijven", "Vergeten wie je moet opvolgen en wanneer"],
-      newTag: "Met Springr",
+      newTag: "Met Ça va jobber",
       newTime: "± 2 min per sollicitatie",
       new: ["Eén feed, gesorteerd voor jou", "Uitzendkantoren aangeduid en te verbergen", "Standaardmail ingevuld per vacature", "Automatische herinnering om op te volgen"],
     },
@@ -498,7 +498,7 @@ const nl: Dict = {
     },
     faqTitle: "Veelgestelde vragen",
     faq: [
-      ["Wat is Springr?", "Een jobplatform voor 16- tot 35-jarigen die in België wonen. Het verzamelt vacatures uit verschillende bronnen, rangschikt ze volgens je profiel en helpt je solliciteren."],
+      ["Wat is Ça va jobber?", "Een jobplatform voor 16- tot 35-jarigen die in België wonen. Het verzamelt vacatures uit verschillende bronnen, rangschikt ze volgens je profiel en helpt je solliciteren."],
       ["Is het echt gratis?", "Ja. Zoeken, swipen, voorbereiden en je sollicitaties opvolgen is gratis, zonder bankkaart."],
       ["Waar komen de vacatures vandaan?", "Van de open data van Le Forem, Adzuna België en carrièrepagina's van bedrijven. Elke vacature verwijst naar de oorspronkelijke advertentie."],
       ["Waarom mijn adres controleren?", "De dienst is voorbehouden aan personen die in België wonen. Je postcode dient ook om je vacatures in de buurt te tonen."],
@@ -513,7 +513,7 @@ const nl: Dict = {
     title: "Maak je profiel",
     intro: "Deze dienst is voorbehouden aan personen van 16 tot 35 jaar die in België wonen. Je adres dient enkel om je woonplaats te controleren en je vacatures in de buurt te tonen.",
     import: {
-      lead: "Springr vult het formulier in, jij hoeft alleen te bevestigen of te verbeteren.",
+      lead: "Ça va jobber vult het formulier in, jij hoeft alleen te bevestigen of te verbeteren.",
       button: "Mijn cv uploaden",
       replace: "Vervangen",
       saved: "Cv toegevoegd",
@@ -707,7 +707,7 @@ const nl: Dict = {
     subject: "Sollicitatie:",
     sent: "Gesolliciteerd, volgende",
     skip: "Overslaan",
-    review: "Springr verstuurt niets in jouw plaats: solliciteer op de site van de vacature.",
+    review: "Ça va jobber verstuurt niets in jouw plaats: solliciteer op de site van de vacature.",
     empty: "Geen vacatures te verwerken. Bewaar vacatures in je feed, ze komen hier terecht.",
     done: "Klaar: {n} sollicitatie(s) verstuurd. Denk eraan op te volgen na 7 dagen.",
   },

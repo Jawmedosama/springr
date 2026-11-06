@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 
-/** Permet d'installer Springr comme une appli, depuis l'écran d'accueil du téléphone. */
+/** Permet d'installer Ça va jobber comme une appli, depuis l'écran d'accueil du téléphone. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Springr",
-    short_name: "Springr",
+    name: "Ça va jobber",
+    short_name: "Ça va jobber",
     description: "Jobs, stages et alternance pour les 16 à 35 ans en Belgique.",
     start_url: "/fr/offres",
     display: "standalone",
