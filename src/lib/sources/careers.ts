@@ -54,6 +54,7 @@ const BOARDS: { ats: "greenhouse" | "lever" | "recruitee" | "smartrecruiters"; s
   { ats: "greenhouse", slug: "guardsquare", name: "Guardsquare" },
   { ats: "recruitee", slug: "colruytgroup", name: "Colruyt Group" },
   { ats: "recruitee", slug: "konicaminolta", name: "Konica Minolta" },
+  { ats: "recruitee", slug: "ethias", name: "Ethias" },
 ];
 
 const IN_BELGIUM = /belgi|belgique|belgië/i;

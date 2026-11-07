@@ -130,10 +130,14 @@ export interface OffersResult {
 
 /**
  * Grandes villes lues une fois par jour pour toute la Belgique : ces appels sont partagés par tous les visiteurs.
- * La clé gratuite limite les appels par minute et par jour : 18 ici, plus les 5 de la recherche, restent sous 25.
+ * La clé gratuite limite les appels : les plus grandes villes ont 2 pages, les autres 1, soit 26 appels par jour au total.
  */
-const POOL_CITIES = ["Bruxelles", "Antwerpen", "Gent", "Liège", "Charleroi", "Namur", "Leuven", "Brugge", "Mons"];
-const adzunaPool = () => POOL_CITIES.flatMap((city) => [1, 2].map((page) => fetchAdzuna("", page, city, 20, 86400)));
+const BIG_CITIES = ["Bruxelles", "Antwerpen", "Gent", "Liège", "Charleroi"];
+const POOL_CITIES = ["Namur", "Leuven", "Brugge", "Mons", "Hasselt", "Mechelen", "Kortrijk", "Aalst", "Oostende", "Wavre", "Tournai", "Verviers", "Arlon", "Sint-Niklaas", "Genk", "Roeselare"];
+const adzunaPool = () => [
+  ...BIG_CITIES.flatMap((city) => [1, 2].map((page) => fetchAdzuna("", page, city, 20, 86400))),
+  ...POOL_CITIES.map((city) => fetchAdzuna("", 1, city, 15, 86400)),
+];
 
 const FLEXI = /\bflexi\b|\bflexi[- ]?jobs?\b/i;
 const STUDENT = /\b(jobiste|job[- ]étudiant|job[- ]etudiant|contrat étudiant|contrat etudiant|étudiante?s?|etudiante?s?|studentenjob|jobstudent|student)\b/i;
