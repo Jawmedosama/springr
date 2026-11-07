@@ -11,13 +11,15 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
+    "@types/web-push": "3.6.4",
     "@vercel/analytics": "2.0.1",
     "jspdf": "4.2.1",
     "mammoth": "1.13.0",
     "next": "15.5.28",
     "pdfjs-dist": "6.5.438",
     "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "react-dom": "19.1.1",
+    "web-push": "3.6.7"
   },
   "devDependencies": {
     "@types/node": "22.18.0",

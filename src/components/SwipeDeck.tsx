@@ -11,6 +11,7 @@ import { minutes, travelTo, type Geo } from "@/lib/travel";
 import type { Lang, Offer, Profile } from "@/lib/types";
 import FilterPanel from "./FilterPanel";
 import InstallHint from "./InstallHint";
+import NotifyButton from "./NotifyButton";
 import OfferCard, { MatchRing } from "./OfferCard";
 import PrepSheet from "./PrepSheet";
 import SearchElsewhere from "./SearchElsewhere";
@@ -256,6 +257,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
         </div>
 
         <FilterPanel t={t} filters={filters} count={total} hiddenByFrench={hiddenByFrench} onChange={changeFilters} />
+        <NotifyButton t={t} lang={lang} query={{ ...feedQuery(what, where, filters, profile?.mobilityKm), profile: profile ? { contracts: profile.contracts, region: profile.region, skills: profile.skills, field: profile.field, languages: profile.languages } : null }} />
 
         {demo && <p className="banner">{o.demo}</p>}
         {newCount > 0 && <p className="banner ok">{o.newSince.replace("{n}", String(newCount))}</p>}
