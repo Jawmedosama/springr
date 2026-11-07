@@ -5,6 +5,9 @@ import type { ContractType, Lang, MatchProfile, Offer, Province, Region } from "
 import { getAllOffers } from "./index";
 
 const PAGE_SIZE = 100;
+/** Le texte complet reste sur le site d'origine : un extrait suffit dans le fil, et la page charge bien plus vite. */
+const DESC_MAX = 900;
+const short = (o: Offer): Offer => (o.description.length > DESC_MAX ? { ...o, description: `${o.description.slice(0, DESC_MAX).trimEnd()}…` } : o);
 /** Pour le classement seulement : à score proche, une offre d'employeur passe avant une agence. */
 const AGENCY_RANK_PENALTY = 25;
 
@@ -20,6 +23,9 @@ export interface FeedRequest {
   profile?: (Omit<MatchProfile, "cvText"> & { experienced?: boolean }) | null;
   lang: Lang;
   page?: number;
+  /** Position de départ et nombre d'offres : la première vague est petite, pour s'afficher vite sur téléphone. */
+  offset?: number;
+  size?: number;
   /** Date de la dernière visite, pour compter les nouvelles offres. */
   since?: string;
   /** Préférences apprises dans le navigateur : utilisées pour trier, jamais conservées. */
@@ -49,10 +55,11 @@ export async function getFeed(r: FeedRequest): Promise<FeedResult> {
     .map((offer) => ({ offer, score: (forScore ? matchOffer(offer, forScore, r.lang, r.taste).score : 0) - (offer.agency ? AGENCY_RANK_PENALTY : 0) }))
     .sort((a, b) => b.score - a.score || b.offer.publishedAt.localeCompare(a.offer.publishedAt));
 
-  const page = r.page ?? 0;
-  const slice = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((x) => x.offer);
+  const size = Math.min(PAGE_SIZE, Math.max(1, Number(r.size) || PAGE_SIZE));
+  const start = r.offset !== undefined ? Math.max(0, Number(r.offset) || 0) : (r.page ?? 0) * PAGE_SIZE;
+  const slice = ranked.slice(start, start + size).map((x) => short(x.offer));
   // Les sources n'écrivent pas leurs dates pareil : on compare des instants, pas du texte.
   const since = r.since ? Date.parse(r.since) : NaN;
   const newCount = Number.isNaN(since) ? 0 : kept.filter((o) => Date.parse(o.publishedAt) > since).length;
-  return { offers: slice, total: ranked.length, hiddenByFrench, newCount, hasMore: (page + 1) * PAGE_SIZE < ranked.length, demo, removed };
+  return { offers: slice, total: ranked.length, hiddenByFrench, newCount, hasMore: start + size < ranked.length, demo, removed };
 }

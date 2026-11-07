@@ -19,6 +19,9 @@ import StartDialog from "./StartDialog";
 import { IconHeart, IconInfo, IconPen, IconX } from "./Icons";
 
 const THRESHOLD = 110;
+/** Petite première vague pour un affichage rapide en 4G, puis des vagues de 100. */
+const FIRST_WAVE = 25;
+const WAVE = 100;
 
 interface Ranked {
   offer: Offer;
@@ -55,14 +58,15 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
   const [askAccount, setAskAccount] = useState(false);
 
   const fetchPage = useCallback(
-    (w: string, c: string, f: Filters, p: Profile | null, n: number) =>
+    (w: string, c: string, f: Filters, p: Profile | null, offset: number, size: number) =>
       fetch("/api/feed", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           ...feedQuery(w, c, f, p?.mobilityKm),
           lang,
-          page: n,
+          offset,
+          size,
           since: lastVisit.current,
           taste: store.getTaste(),
           profile: p && {
@@ -83,7 +87,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
       setOffers(null);
       setPage(0);
       const id = ++latest.current;
-      fetchPage(w, c, f, p, 0)
+      fetchPage(w, c, f, p, 0, FIRST_WAVE)
         .then((d) => {
           if (id !== latest.current) return;
           setOffers(d.offers);
@@ -162,7 +166,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
     const next = page + 1;
     const id = latest.current;
     setMore(true);
-    const d = await fetchPage(what, where, filters, profile ?? null, next).catch(() => null);
+    const d = await fetchPage(what, where, filters, profile ?? null, FIRST_WAVE + page * WAVE, WAVE).catch(() => null);
     setMore(false);
     if (!d || id !== latest.current) return;
     setOffers((list) => {
@@ -175,7 +179,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
 
   // Il reste peu de cartes : la suite arrive toute seule, jusqu'à la dernière offre.
   useEffect(() => {
-    if (offers && hasMore && !more && ranked.length <= 5) void loadMore();
+    if (offers && hasMore && !more && ranked.length <= 10) void loadMore();
   }, [offers, hasMore, more, ranked.length, loadMore]);
 
   function changeFilters(next: Filters) {
@@ -203,6 +207,19 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
       .then((x) => x.json() as Promise<{ gone: boolean }>)
       .then((d) => d.gone && setGone(r.offer.id))
       .catch(() => undefined);
+  }
+
+  /** Partage l'offre (WhatsApp, SMS…) avec un lien qui s'ouvre sur Ça va jobber. */
+  async function share(offer: Offer) {
+    const q = new URLSearchParams({ t: offer.title, c: offer.company, v: cityLabel(offer.city, lang), s: offer.source });
+    if (/^https:\/\//.test(offer.url)) q.set("u", offer.url);
+    const url = `${location.origin}/${lang}/offre?${q}`;
+    const text = `${o.shareTitle} : ${offer.title}`;
+    if (navigator.share) {
+      await navigator.share({ title: offer.title, text, url }).catch(() => undefined);
+      return;
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, "_blank", "noopener");
   }
 
   function openPrep(offer: Offer) {
@@ -389,6 +406,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
               )}
               <button className="btn brand" onClick={() => openPrep(detail.offer)}>{o.prepare}</button>
               <button className="btn" onClick={() => { setDetail(null); decide(true); }}>{o.like}</button>
+              <button className="btn" onClick={() => void share(detail.offer)}>{o.share}</button>
             </div>
           </div>
         </div>

@@ -48,6 +48,8 @@ export default function FilterPanel({ t, filters: f, count, hiddenByFrench, onCh
     ...(f.km ? [[`${f.km} km`, () => set({ km: null })] as [string, () => void]] : []),
     ...(f.easy ? [[t.offers.easy, () => set({ easy: false })] as [string, () => void]] : []),
     ...(f.hideAgencies ? [[l.noAgencies, () => set({ hideAgencies: false })] as [string, () => void]] : []),
+    ...(f.license ? [[l.license, () => set({ license: false })] as [string, () => void]] : []),
+    ...(f.remote ? [[l.remote, () => set({ remote: false })] as [string, () => void]] : []),
   ];
 
   return (
@@ -127,6 +129,8 @@ export default function FilterPanel({ t, filters: f, count, hiddenByFrench, onCh
             <div className="chips">
               {chip(f.easy, t.offers.easy, () => set({ easy: !f.easy }))}
               {chip(f.hideAgencies, l.noAgencies, () => set({ hideAgencies: !f.hideAgencies }))}
+              {chip(Boolean(f.remote), l.remote, () => set({ remote: !f.remote }))}
+              {chip(Boolean(f.license), l.license, () => set({ license: !f.license }))}
             </div>
           </div>
           <button type="button" className="btn dark block" onClick={() => setOpen(false)}>{l.show.replace("{n}", String(count))}</button>
