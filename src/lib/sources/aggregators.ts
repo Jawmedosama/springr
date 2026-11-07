@@ -29,14 +29,14 @@ interface JoobleJob {
 }
 
 /** Clé gratuite sur https://jooble.org/api/about */
-export async function fetchJooble(what = "", where = "", km = 30, page = 1): Promise<Offer[]> {
+export async function fetchJooble(what = "", where = "", km = 30, page = 1, keepSeconds = 86400): Promise<Offer[]> {
   const key = process.env.JOOBLE_API_KEY;
   if (!key) return [];
   const res = await fetch(`https://jooble.org/api/${key}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ keywords: what, location: where ? `${where}, Belgique` : "Belgique", radius: String(km), page: String(page), ResultOnPage: "100" }),
-    next: { revalidate: 3600 },
+    next: { revalidate: keepSeconds },
   }).catch(() => null);
   if (!res || !res.ok) {
     console.warn(`Jooble : réponse ${res?.status ?? "absente"}`);
@@ -70,7 +70,7 @@ interface CareerjetJob {
 }
 
 /** Clé partenaire gratuite sur https://www.careerjet.be/partners/ */
-export async function fetchCareerjet(what = "", where = "", page = 1): Promise<Offer[]> {
+export async function fetchCareerjet(what = "", where = "", page = 1, keepSeconds = 86400): Promise<Offer[]> {
   const affid = process.env.CAREERJET_AFFID;
   if (!affid) return [];
   const params = new URLSearchParams({
@@ -88,7 +88,7 @@ export async function fetchCareerjet(what = "", where = "", page = 1): Promise<O
       authorization: `Basic ${Buffer.from(`${affid}:`).toString("base64")}`,
       referer: "https://springr-two.vercel.app/",
     },
-    next: { revalidate: 3600 },
+    next: { revalidate: keepSeconds },
   }).catch(() => null);
   if (!res || !res.ok) {
     console.warn(`Careerjet : réponse ${res?.status ?? "absente"}`);

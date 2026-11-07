@@ -160,10 +160,15 @@ function finish(results: PromiseSettledResult<Offer[]>[]): OffersResult {
   return { offers, agencies, removed, demo: live.length === 0 };
 }
 
-/** Jooble et Careerjet, intérim compris : le tri se fait ensuite avec les filtres. */
-function aggregators(what: string, where: string, km: number): Promise<Offer[]>[] {
-  return [1, 2, 3, 4, 5].flatMap((page) => [fetchJooble(what, where, km, page), fetchCareerjet(what, where, page)]);
-}
+/**
+ * Jooble et Careerjet : une réserve commune, lue une fois par jour et partagée par tous les visiteurs.
+ * La clé Jooble n'autorise que 500 appels au total : jamais d'appel par visiteur, 7 par jour au plus pour chacun.
+ */
+const AGGREGATOR_CITIES = ["Bruxelles", "Antwerpen", "Liège", "Gent"];
+const aggregatorPool = (): Promise<Offer[]>[] => [
+  ...[1, 2, 3].flatMap((page) => [fetchJooble("", "", 30, page), fetchCareerjet("", "", page)]),
+  ...AGGREGATOR_CITIES.flatMap((city) => [fetchJooble("", city, 20, 1), fetchCareerjet("", city, 1)]),
+];
 
 export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   const what = q.what?.trim() ?? "";
@@ -177,7 +182,6 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
     const calls = q.provinces.slice(0, 5).flatMap((province) => [
       fetchForem({ what, contracts, province, all }),
       fetchAdzuna(what, 1, ADZUNA_PROVINCES[province], 30),
-      ...aggregators(what, ADZUNA_PROVINCES[province], 30),
     ]);
     return finish(await Promise.allSettled([...calls, fetchCareers({ what })]));
   }
@@ -188,7 +192,6 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
       fetchForem({ what, where, km, contracts, all }),
       fetchAdzuna(what, 1, where, km),
       fetchCareers({ what, where }),
-      ...aggregators(what, where, km),
     ]);
     return finish(await Promise.allSettled(calls));
   }
@@ -204,8 +207,8 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   ];
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
-  if (!what && !where) calls.push(...adzunaPool());
-  calls.push(fetchCareers({ what, where, region: q.region }), ...aggregators(what, where, km));
+  if (!what && !where) calls.push(...adzunaPool(), ...aggregatorPool());
+  calls.push(fetchCareers({ what, where, region: q.region }));
   return finish(await Promise.allSettled(calls));
 }
 
