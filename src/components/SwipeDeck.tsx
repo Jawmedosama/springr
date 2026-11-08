@@ -349,6 +349,7 @@ export default function SwipeDeck({ lang }: { lang: Lang }) {
       )}
 
       <SearchElsewhere t={t} what={what} where={where} />
+      <p style={{ marginTop: 12 }}><Link className="chip" href={`/${lang}/ajouter-offre`} style={{ textDecoration: "none" }}>{o.addOffer}</Link></p>
 
       {detail && (
         <div className="sheet-bg" onClick={() => setDetail(null)}>

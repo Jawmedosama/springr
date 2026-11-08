@@ -13,7 +13,17 @@ interface Row {
   description: string;
   apply_url: string;
   created_at: string;
+  kind?: "employer" | "shared";
 }
+
+/** Pour une offre partagée, la source est le site de l'annonce. */
+const host = (u: string) => {
+  try {
+    return new URL(u).hostname.replace(/^www\./, "");
+  } catch {
+    return "Lien partagé";
+  }
+};
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 
@@ -46,7 +56,7 @@ export async function fetchEmployers(q: { what?: string; where?: string } = {}):
       salary: r.salary ?? undefined,
       description: r.description,
       url: r.apply_url,
-      source: "Ça va jobber",
+      source: r.kind === "shared" ? host(r.apply_url) : "Ça va jobber",
       publishedAt: r.created_at,
     }));
 }
