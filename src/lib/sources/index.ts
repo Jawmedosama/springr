@@ -3,6 +3,7 @@ import type { ContractType, Offer, Province, Region } from "../types";
 import { fetchAdzuna } from "./adzuna";
 import { fetchCareerjet, fetchJooble } from "./aggregators";
 import { fetchCareers } from "./careers";
+import { fetchEmployers } from "./employers";
 import { fetchForem } from "./forem";
 import { SAMPLE_OFFERS } from "./sample";
 
@@ -33,7 +34,7 @@ function sameTitle(a: Set<string>, b: Set<string>): boolean {
 /** Plus une fiche donne d'informations, plus elle a de chances d'être gardée. */
 function richness(o: Offer): number {
   return (
-    (o.source === "Le Forem" ? 3 : 0) +
+    (o.source === "Ça va jobber" ? 20 : o.source === "Le Forem" ? 3 : 0) +
     Math.min(5, o.description.length / 200) +
     (o.salary ? 3 : 0) +
     (o.regime ? 1 : 0) +
@@ -183,7 +184,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
       fetchForem({ what, contracts, province, all }),
       fetchAdzuna(what, 1, ADZUNA_PROVINCES[province], 30),
     ]);
-    return finish(await Promise.allSettled([...calls, fetchCareers({ what })]));
+    return finish(await Promise.allSettled([...calls, fetchCareers({ what }), fetchEmployers({ what })]));
   }
 
   // Plusieurs villes : une recherche par ville, avec le même rayon.
@@ -193,7 +194,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
       fetchAdzuna(what, 1, where, km),
       fetchCareers({ what, where }),
     ]);
-    return finish(await Promise.allSettled(calls));
+    return finish(await Promise.allSettled([...calls, fetchEmployers({ what, where: places.join(",") })]));
   }
 
   const where = places[0] ?? "";
@@ -208,7 +209,7 @@ export async function getAllOffers(q: OfferQuery = {}): Promise<OffersResult> {
   // Métier + ville : on complète avec tout ce qui recrute dans la zone, sans dépasser la distance choisie.
   if (what && where) calls.push(fetchAdzuna("", 1, where, km));
   if (!what && !where) calls.push(...adzunaPool(), ...aggregatorPool());
-  calls.push(fetchCareers({ what, where, region: q.region }));
+  calls.push(fetchCareers({ what, where, region: q.region }), fetchEmployers({ what, where }));
   return finish(await Promise.allSettled(calls));
 }
 
@@ -225,5 +226,5 @@ export async function getRegionOffers(region?: Region): Promise<OffersResult> {
     cities.length > 1
       ? cities.map((c) => fetchAdzuna("", 1, c, 30))
       : [1, 2, 3, 4, 5].map((p) => fetchAdzuna("", p, cities[0], 30));
-  return finish(await Promise.allSettled([fetchForem({ region, all: true }), fetchCareers({ region }), ...calls]));
+  return finish(await Promise.allSettled([fetchForem({ region, all: true }), fetchCareers({ region }), fetchEmployers(), ...calls]));
 }

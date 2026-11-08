@@ -52,7 +52,7 @@ export async function getFeed(r: FeedRequest): Promise<FeedResult> {
   const p = r.profile;
   const forScore = p ? { ...p, cvText: p.experienced ? "x".repeat(400) : "" } : null;
   const ranked = kept
-    .map((offer) => ({ offer, score: (forScore ? matchOffer(offer, forScore, r.lang, r.taste).score : 0) - (offer.agency ? AGENCY_RANK_PENALTY : 0) }))
+    .map((offer) => ({ offer, score: (forScore ? matchOffer(offer, forScore, r.lang, r.taste).score : 0) - (offer.agency ? AGENCY_RANK_PENALTY : 0) + (offer.source === "Ça va jobber" ? 10 : 0) }))
     .sort((a, b) => b.score - a.score || b.offer.publishedAt.localeCompare(a.offer.publishedAt));
 
   const size = Math.min(PAGE_SIZE, Math.max(1, Number(r.size) || PAGE_SIZE));
