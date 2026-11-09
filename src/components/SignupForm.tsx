@@ -28,7 +28,7 @@ export default function SignupForm({ lang }: { lang: Lang }) {
     studyLevel: t.studyLevels[0], field: "", skills: "",
     languages: [] as string[], contracts: [] as ContractType[], mobilityKm: 30,
     cvText: "",
-    declaredResident: false, consent: false,
+    declaredResident: true, consent: false,
   });
 
   useEffect(() => {
@@ -82,7 +82,6 @@ export default function SignupForm({ lang }: { lang: Lang }) {
     if (i === 1) {
       if ([f.street, f.number, f.postcode, f.city].some((v) => !v.trim())) return s.errors.required;
       if (!region) return s.errors.postcode;
-      if (!f.declaredResident) return s.errors.declare;
     }
     if (i === 2 && f.contracts.length === 0) return s.errors.contracts;
     if (i === 2 && !f.consent) return s.errors.consent;
@@ -155,10 +154,6 @@ export default function SignupForm({ lang }: { lang: Lang }) {
               </label>
               <label className="span2">{s.city}<input className={hl("city")} value={f.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" /></label>
             </div>
-            <label className="check">
-              <input type="checkbox" checked={f.declaredResident} onChange={(e) => set("declaredResident", e.target.checked)} />
-              {s.declare}
-            </label>
           </section>
         )}
 

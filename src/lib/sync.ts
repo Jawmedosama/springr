@@ -53,7 +53,8 @@ const toProfileRow = (p: Profile, id: string): ProfileRow => ({
   postcode: p.postcode,
   city: p.city,
   region: p.region,
-  declared_resident: p.declaredResident,
+  // Plus demandée à l'inscription ; la colonne reste pour les anciens comptes.
+  declared_resident: true,
   study_level: p.studyLevel,
   field: p.field,
   skills: p.skills,

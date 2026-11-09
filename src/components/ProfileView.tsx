@@ -128,8 +128,6 @@ export default function ProfileView({ lang }: { lang: Lang }) {
             <dd>{profile.street} {profile.number}, {profile.postcode} {profile.city}</dd>
             <dt>{p.region}</dt>
             <dd>{t.regions[profile.region]}</dd>
-            <dt>{p.declaration}</dt>
-            <dd>{profile.declaredResident ? `✓ ${p.verified}` : "—"}</dd>
           </dl>
         </section>
 
